@@ -26,37 +26,40 @@ the pole axis (bottom and top keypoints).
 
 | tag (file prefix) | backbone | training |
 |---|---|---|
+| **`dinov2_tuned_mt`** (`b4a_final_dinov2/`) | DINOv2 (base) | classification + keypoint loss, tuned (lr 1e-5 / 3e-4, 15 ep, λ = 2) |
+| `dinov2_tuned_cls` (`b4a_final_dinov2/`) | DINOv2 (base) | classification only, tuned (lr 1e-5 / 3e-4, 15 ep) |
 | `dinov2reg_cls` | DINOv2 with registers (base) | classification loss only |
 | `dinov2reg_mt` | DINOv2 with registers (base) | + auxiliary keypoint loss (λ = 5) |
 | `dinov2_mt_geo_d` | DINOv2 (base) | `mt` + classifier also sees the geometry of the predicted axis (detached keypoints) |
 
-The batch-1 DINOv2 `cls` / `mt` models reported below were trained before checkpoint saving was enabled.
-Their re-trained checkpoints, with tuned hyper-parameters, will be added later.
+The batch-1 DINOv2 `cls` / `mt` models (default settings) were trained before checkpoint saving was enabled.
+The tuned DINOv2 checkpoints above replace them.
 
 ## Results
 
-Official classification test split (227 images), mean ± std over 3 seeds, default hyper-parameters
-(lr 2e-5 / 1e-3, 15 epochs, λ = 5; not yet tuned).
+Official classification test split (227 images), mean ± std over 3 seeds (0, 1, 2).
 
-**Checkpoints in this repository:**
+**Tuned DINOv2** (hyper-parameters selected on validation only, with an equal budget for both modes):
+
+| tag | Accuracy | Macro-F1 | Macro-F1 of 3-seed majority vote |
+|---|---|---|---|
+| **`dinov2_tuned_mt`** | **86.93 ± 2.17** | **84.72 ± 2.29** | **87.37** |
+| `dinov2_tuned_cls` | 86.34 ± 0.76 | 83.50 ± 0.67 | 83.30 |
+
+`mt` vs `cls`: +1.23 Macro-F1 (paired bootstrap 95% CI [−2.0, +4.7]). The difference is not significant.
+
+**Default hyper-parameters** (lr 2e-5 / 1e-3, 15 epochs, λ = 5):
 
 | tag | Accuracy | Macro-F1 |
 |---|---|---|
 | `dinov2reg_cls` | 84.88 ± 1.11 | 82.37 ± 0.97 |
 | `dinov2reg_mt` | 81.50 ± 1.17 | 78.66 ± 0.99 |
 | `dinov2_mt_geo_d` | 83.41 ± 0.67 | 80.38 ± 1.79 |
-
-**Reference runs** (DINOv2-base, trained before checkpoint saving was enabled):
-
-| model | Accuracy | Macro-F1 |
-|---|---|---|
-| `cls` | 82.23 ± 2.08 | 78.78 ± 2.39 |
-| `mt` | 85.90 ± 0.44 | 83.41 ± 0.94 |
+| DINOv2 `cls` (no checkpoint) | 82.23 ± 2.08 | 78.78 ± 2.39 |
+| DINOv2 `mt` (no checkpoint) | 85.90 ± 0.44 | 83.41 ± 0.94 |
 
 The auxiliary keypoint loss helps DINOv2 (+4.6 Macro-F1, 95% CI [+2.0, +7.5]) but hurts DINOv2 with
-registers (−3.7, CI [−6.6, −1.0]) at these untuned settings. An equal-budget hyper-parameter search on
-validation (8 shared configurations, 2 seeds) selected lr 1e-5 / 3e-4, 15 epochs (λ = 2 for `mt`) for both
-modes. Tuned DINOv2 checkpoints (`b4a_final_dinov2/`) are being trained and will be added with their test results.
+registers (−3.7, CI [−6.6, −1.0]) at these untuned settings. Tuning for DINOv2-with-registers is planned.
 
 The dataset card reports a DINOv3 ViT-B/16 baseline of 84.14 Acc / 81.74 Macro-F1. This value lies inside
 our confidence intervals, so no claim of outperforming it is made.
@@ -64,7 +67,8 @@ our confidence intervals, so no claim of outperforming it is made.
 ## Files
 
 ```
-b2_dinov2reg_geofix/<tag>_s<seed>.pt     seeds 0, 1, 2
+b4a_final_dinov2/<tag>_s<seed>.pt        tuned DINOv2, seeds 0, 1, 2
+b2_dinov2reg_geofix/<tag>_s<seed>.pt     default settings, seeds 0, 1, 2
 ```
 
 Each file is a `torch.save` dict with these keys:
@@ -82,7 +86,7 @@ The checkpoints use the `MTNet` class from the project's training script. Inputs
 import torch
 from train_multitask import MTNet   # project training script
 
-ck = torch.load("dinov2reg_mt_s0.pt", map_location="cpu")
+ck = torch.load("dinov2_tuned_mt_s0.pt", map_location="cpu")
 a = ck["args"]
 model = MTNet(a["backbone"], a["size"], a["mode"])
 model.load_state_dict({k: v.float() for k, v in ck["state_dict"].items()})

@@ -17,7 +17,8 @@ Last updated: 2026-11-23, after batch `b4a_final_dinov2`.
 - `b1_dinov2`: DINOv2 × {cls, mt, mt_geo}, default hyper-parameters
 - `b2_dinov2reg_geofix`: DINOv2-reg × {cls, mt} + DINOv2 `mt_geo_d` (checkpoints on HF)
 - `b3_tune_dinov2`: equal-budget search, validation only → `best_configs.json` (trial 7 for both modes)
-- `b4a_final_dinov2`: tuned DINOv2 cls / mt, seeds 0–2, test once (checkpoints on HF). See its `analysis.txt`.
+- `b4a_final_dinov2`: tuned DINOv2 cls / mt, seeds 0–2, test once (checkpoints on HF). Result: mt 84.72 ± 2.29 vs
+  cls 83.50 ± 0.67 Macro-F1, Δ +1.23, CI [−2.0, +4.7], not significant. See its `analysis.txt` and the README headline.
 
 ## Next
 1. `b3b_tune_dinov2reg`: same search on DINOv2-with-registers (32 runs, ~3.5 h). Plan: `tools/plans/b3b_tune_dinov2reg.py`.

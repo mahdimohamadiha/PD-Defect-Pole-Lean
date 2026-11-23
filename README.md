@@ -5,13 +5,40 @@ Multi-task learning for **utility-pole lean assessment** (Leaned / Straight / Re
 CC BY 4.0). A ViT backbone is fine-tuned for 3-way classification, with an auxiliary head that
 regresses the pole axis (bottom and top keypoints).
 
-> **Status:** work in progress. Batches 1–3 are complete, including the DINOv2 hyper-parameter search
-> (validation only). The final DINOv2 test evaluation with the tuned settings (batch 4a) is running.
-> Numbers below are updated at every stage.
+> **Status:** work in progress. DINOv2 is complete (default runs, validation-only tuning, final tuned test
+> evaluation). Next: the same tuning and final evaluation for DINOv2-with-registers. Numbers below are
+> updated at every stage.
 
-## Results so far
+## Headline: tuned DINOv2-base (final)
 
-Full fine-tuning, official test split (227 images), mean ± std over 3 seeds, default hyper-parameters (not yet tuned):
+Hyper-parameters selected on validation only (batch 3; same configuration for both modes: lr 1e-5 / 3e-4,
+15 epochs, λ = 2). Re-trained with seeds 0–2 and evaluated once on the official test split (227 images):
+
+| model | Acc | Macro-F1 | F1 Leaned | F1 Straight | F1 Rejected | majority-vote Macro-F1 |
+|---|---|---|---|---|---|---|
+| `cls` (tuned) | 86.34 ± 0.76 | 83.50 ± 0.67 | 78.8 | 91.3 | 80.4 | 83.30 |
+| **`mt` (tuned)** | **86.93 ± 2.17** | **84.72 ± 2.29** | **81.5** | 91.2 | **81.4** | **87.37** |
+| dataset-card baseline (DINOv3 ViT-B/16)\* | 84.14 | 81.74 | – | – | – | – |
+
+| comparison | Δ Macro-F1 | 95% CI | McNemar p (Holm) |
+|---|---|---|---|
+| tuned `mt` vs tuned `cls` | +1.23 | [−2.01, +4.70] | 0.24 (0.29) |
+| tuned `cls` vs default `cls` | **+4.72** | [+1.50, +8.37] | 0.041 (0.12) |
+| tuned `mt` vs default `mt` | +1.31 | [−1.43, +4.11] | 0.14 (0.29) |
+
+- After equal-budget tuning, `mt` is ahead on every test metric, but the gap (+1.2 Macro-F1) is **not
+  significant**. The large batch-1 gap (+4.6) came mostly from the default settings being poor for `cls`:
+  tuning helped `cls` by +4.7 and `mt` by only +1.3.
+- On validation, `mt` was much less sensitive to hyper-parameters and seeds. On test, at the tuned setting, its
+  seed spread is larger than that of `cls` (± 2.3 vs ± 0.7), so the robustness claim must be stated for
+  the default/untuned regime only.
+- Both tuned models exceed the dataset-card numbers, but the card value lies inside our CIs.
+- Output: [`b4a_final_dinov2/analysis.txt`](results/marimo/b4a_final_dinov2/analysis.txt).
+
+
+## Results with default hyper-parameters (batches 1–2)
+
+Full fine-tuning, official test split (227 images), mean ± std over 3 seeds, default hyper-parameters (not tuned):
 
 | backbone | model | Acc | Macro-F1 | F1 Leaned | F1 Straight | F1 Rejected |
 |---|---|---|---|---|---|---|
@@ -124,7 +151,7 @@ Default training settings:
 | `b1_dinov2` | DINOv2-base × {cls, mt, mt_geo} × seeds 0–2 | ✅ done |
 | `b2_dinov2reg_geofix` | DINOv2-with-registers × {cls, mt}; DINOv2 `mt_geo_d`; × seeds 0–2; checkpoints saved | ✅ done |
 | `b3_tune_dinov2` | DINOv2: equal-budget paired random search, 8 shared configs for cls & mt (mt adds λ ∈ {1, 2, 5, 10}), 2 search seeds, **val only** | ✅ done |
-| `b4a_final_dinov2` | DINOv2: best config per mode from `b3`, seeds 0–2, single test evaluation, checkpoints saved | ⏳ running |
+| `b4a_final_dinov2` | DINOv2: best config per mode from `b3`, seeds 0–2, single test evaluation, checkpoints saved | ✅ done |
 | `b3b_tune_dinov2reg` | same search (same 8 configs, same λ draws, same seeds) on DINOv2-with-registers | queued |
 | `b4b_final_dinov2reg` | DINOv2-reg: best config per mode from `b3b`, seeds 0–2, single test evaluation, checkpoints saved | planned |
 

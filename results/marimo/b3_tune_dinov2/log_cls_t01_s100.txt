@@ -8,3 +8,10 @@ seed100 ep0 val acc 0.6891 macroF1 0.6512
 seed100 ep1 val acc 0.5601 macroF1 0.5478
 seed100 ep2 val acc 0.5865 macroF1 0.5952
 seed100 ep3 val acc 0.7830 macroF1 0.7296
+seed100 ep4 val acc 0.7478 macroF1 0.7316
+seed100 ep5 val acc 0.7977 macroF1 0.7544
+seed100 ep6 val acc 0.7742 macroF1 0.7361
+seed100 ep7 val acc 0.7713 macroF1 0.7361
+seed100 ep8 val acc 0.7302 macroF1 0.7096
+seed100 ep9 val acc 0.7977 macroF1 0.7514
+seed100 ep10 val acc 0.7742 macroF1 0.7442

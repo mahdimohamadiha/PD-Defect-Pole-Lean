@@ -51,13 +51,16 @@ def download():
 
 @app.cell
 def plan():
-    # ---- batch 2: DINOv3 baseline + fixed geometry head (batch 1 = results/b1_dinov2, DINOv2, cls/mt/mt_geo)
-    BATCH = "b2_dinov3_geofix"
-    DINOV3 = "facebook/dinov3-vitb16-pretrain-lvd1689m"   # gated on HF: needs an accepted licence + token
-    CKPT_REPO = "mahdimohamadiha/pd-defect-pole-lean-checkpoints"
+    # ---- batch 2: second open backbone (DINOv2 with registers) + fixed geometry head
+    # batch 1 = results/b1_dinov2 (DINOv2-base: cls / mt / mt_geo). DINOv3 (dataset-card baseline) was not
+    # available to us (gated access refused), so the card number is cited, not reproduced.
+    BATCH = "b2_dinov2reg_geofix"
+    DINOV2_REG = "facebook/dinov2-with-registers-base"   # Apache-2.0, not gated
+    GATED = set()                                         # backbones that need gated HF access (none in this batch)
+    CKPT_REPO = "northlattice/pd-defect-pole-lean-checkpoints"
     EXPERIMENTS = {                                       # tag -> extra args (rest = script defaults: 15 ep, 448 px, bs 16)
-        "dinov3_cls": ["--mode", "cls", "--backbone", DINOV3],
-        "dinov3_mt": ["--mode", "mt", "--backbone", DINOV3],
+        "dinov2reg_cls": ["--mode", "cls", "--backbone", DINOV2_REG],
+        "dinov2reg_mt": ["--mode", "mt", "--backbone", DINOV2_REG],
         "dinov2_mt_geo_d": ["--mode", "mt_geo_d"],         # detached geometry, no length feature
     }
     SEEDS = [0, 1, 2]
@@ -65,15 +68,16 @@ def plan():
     RUN_DIR = f"{RESULTS}/{BATCH}"
     CKPT_DIR = f"{WORK}/checkpoints/{BATCH}"
     RUNS = [(t, s) for s in SEEDS for t in EXPERIMENTS]   # seed-major: partial results stay balanced
-    ANALYSIS_PAIRS = ["cls:dinov3_cls", "dinov3_cls:dinov3_mt", "mt:dinov3_mt", "mt:dinov2_mt_geo_d", "mt_geo:dinov2_mt_geo_d"]
+    ANALYSIS_PAIRS = ["dinov2reg_cls:dinov2reg_mt", "cls:dinov2reg_cls", "mt:dinov2reg_mt",
+                      "mt:dinov2_mt_geo_d", "mt_geo:dinov2_mt_geo_d"]
     return (
         ANALYSIS_PAIRS,
         BATCH,
         CKPT_DIR,
         CKPT_REPO,
         COMMON_ARGS,
-        DINOV3,
         EXPERIMENTS,
+        GATED,
         RUNS,
         RUN_DIR,
     )
@@ -82,7 +86,7 @@ def plan():
 @app.cell
 def hf_token():
     hf_token = mo.ui.text(kind="password", full_width=True,
-                          label="Hugging Face token (read gated repos + write to the checkpoints repo). Never saved in the notebook file.")
+                          label="Hugging Face token (write access to the checkpoints repo). Never saved in the notebook file.")
     hf_token
     return (hf_token,)
 
@@ -100,8 +104,8 @@ def launch(
     CKPT_DIR,
     CKPT_REPO,
     COMMON_ARGS,
-    DINOV3,
     EXPERIMENTS,
+    GATED,
     RUNS,
     RUN_DIR,
     hf_token,
@@ -136,7 +140,7 @@ def launch(
         except Exception as _e:
             _ok_repo, _msg = False, f"checkpoint repo not accessible ({type(_e).__name__}): {str(_e)[:200]}"
         _gated_ok = {}
-        for _bb in {DINOV3}:
+        for _bb in GATED:
             try:
                 _api.auth_check(_bb)   # model_info succeeds even without gated access
                 _gated_ok[_bb] = True

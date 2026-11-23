@@ -138,7 +138,7 @@ def launch(
         _gated_ok = {}
         for _bb in {DINOV3}:
             try:
-                _api.model_info(_bb)
+                _api.auth_check(_bb)   # model_info succeeds even without gated access
                 _gated_ok[_bb] = True
             except Exception:
                 _gated_ok[_bb] = False

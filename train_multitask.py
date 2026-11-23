@@ -146,7 +146,7 @@ def run(args, seed, idx):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     mk = lambda sp, tr: DataLoader(PoleDS(idx[sp], args.size, tr), batch_size=args.bs, shuffle=tr,
-                                   num_workers=2, drop_last=tr)
+                                   num_workers=args.workers, drop_last=tr, persistent_workers=args.workers > 0)
     tr, va, te = mk("train", True), mk("val", False), mk("test", False)
     model = MTNet(args.backbone, args.size, args.mode).to(dev)
     heads = [p for n, p in model.named_parameters() if not n.startswith("bb.")]
@@ -178,8 +178,10 @@ def run(args, seed, idx):
     model.load_state_dict(best[1])
     ys, ps = evaluate(model, te, dev)
     res = {"seed": seed, "mode": args.mode, "val_macroF1": best[0], "test_acc": accuracy_score(ys, ps),
-           "test_macroF1": f1_score(ys, ps, average="macro")}
-    print(classification_report(ys, ps, target_names=CLASSES, digits=4)); print(res)
+           "test_macroF1": f1_score(ys, ps, average="macro"),
+           "y_true": ys, "y_pred": ps, "test_files": [os.path.basename(i[0]) for i in idx["test"]]}
+    print(classification_report(ys, ps, target_names=CLASSES, digits=4))
+    print({k: v for k, v in res.items() if k not in ("y_true", "y_pred", "test_files")})
     return res
 
 
@@ -197,10 +199,12 @@ if __name__ == "__main__":
     ap.add_argument("--lam", type=float, default=5.0)
     ap.add_argument("--seeds", type=int, nargs="+", default=[0])
     ap.add_argument("--out", default="results.json")
+    ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--data_dir", default="/kaggle/working/pd-defect", help="download target (--root should be <data_dir>/pole_lean_assessment)")
     a = ap.parse_args()
     if a.download:
         from huggingface_hub import snapshot_download
-        snapshot_download("EPDCL/pd-defect", repo_type="dataset", local_dir="/kaggle/working/pd-defect",
+        snapshot_download("EPDCL/pd-defect", repo_type="dataset", local_dir=a.data_dir,
                           allow_patterns=["pole_lean_assessment/classification/**",
                                           "pole_lean_assessment/keypoint_detection/images/**",
                                           "pole_lean_assessment/keypoint_detection/labels/**"])

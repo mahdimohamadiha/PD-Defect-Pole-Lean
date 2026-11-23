@@ -35,18 +35,30 @@ Their re-trained checkpoints, with tuned hyper-parameters, will be added later.
 
 ## Results
 
-Official classification test split (227 images), mean ± std over 3 seeds, DINOv2-base:
+Official classification test split (227 images), mean ± std over 3 seeds, default hyper-parameters
+(lr 2e-5 / 1e-3, 15 epochs, λ = 5; not yet tuned).
+
+**Checkpoints in this repository:**
+
+| tag | Accuracy | Macro-F1 |
+|---|---|---|
+| `dinov2reg_cls` | 84.88 ± 1.11 | 82.37 ± 0.97 |
+| `dinov2reg_mt` | 81.50 ± 1.17 | 78.66 ± 0.99 |
+| `dinov2_mt_geo_d` | 83.41 ± 0.67 | 80.38 ± 1.79 |
+
+**Reference runs** (DINOv2-base, trained before checkpoint saving was enabled):
 
 | model | Accuracy | Macro-F1 |
 |---|---|---|
 | `cls` | 82.23 ± 2.08 | 78.78 ± 2.39 |
-| **`mt`** | **85.90 ± 0.44** | **83.41 ± 0.94** |
+| `mt` | 85.90 ± 0.44 | 83.41 ± 0.94 |
 
-The keypoint loss improves Macro-F1 by +4.63 points (paired bootstrap 95% CI [+1.98, +7.46]).
-The dataset card reports a DINOv3 ViT-B/16 baseline of 84.14 Acc / 81.74 Macro-F1. That value lies inside
+The auxiliary keypoint loss helps DINOv2 (+4.6 Macro-F1, 95% CI [+2.0, +7.5]) but hurts DINOv2 with
+registers (−3.7, CI [−6.6, −1.0]) at these untuned settings. An equal-budget hyper-parameter search is in
+progress, and tuned checkpoints will be added afterwards.
+
+The dataset card reports a DINOv3 ViT-B/16 baseline of 84.14 Acc / 81.74 Macro-F1. This value lies inside
 our confidence intervals, so no claim of outperforming it is made.
-
-Results for the batch-2 checkpoints in this repository will be added when the batch completes.
 
 ## Files
 

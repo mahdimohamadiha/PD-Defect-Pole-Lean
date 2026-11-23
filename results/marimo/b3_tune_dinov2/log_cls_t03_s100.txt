@@ -27,3 +27,7 @@ seed100 ep19 val acc 0.8534 macroF1 0.8232
 seed100 ep20 val acc 0.8534 macroF1 0.8232
 seed100 ep21 val acc 0.8534 macroF1 0.8232
 seed100 ep22 val acc 0.8534 macroF1 0.8232
+seed100 ep23 val acc 0.8534 macroF1 0.8232
+seed100 ep24 val acc 0.8534 macroF1 0.8232
+{'seed': 100, 'mode': 'cls', 'tag': 'cls_t03', 'backbone': 'facebook/dinov2-base', 'best_epoch': 11, 'val_macroF1': 0.8403157582524291, 'val_acc': 0.8680351906158358}
+val_macroF1 0.8403 +- 0.0000

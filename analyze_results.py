@@ -22,13 +22,14 @@ CLASSES = ["Leaned", "Straight", "Rejected"]
 BASELINE = {"acc": 0.8414, "macroF1": 0.8174}   # dataset card, DINOv3 ViT-B/16
 
 
-def load(results_dir):
-    runs = {}   # mode -> {seed: (y_true, y_pred, files)}
-    for f in sorted(glob.glob(os.path.join(results_dir, "res_*.json"))):
+def load(results_dirs):
+    runs = {}   # tag (or mode) -> {seed: (y_true, y_pred, files)}
+    files_ = sorted(f for d in results_dirs for f in glob.glob(os.path.join(d, "res_*.json")))
+    for f in files_:
         for r in json.load(open(f)):
             if "y_pred" not in r:
                 raise ValueError(f"{f}: no predictions saved (older script version)")
-            runs.setdefault(r["mode"], {})[r["seed"]] = (np.array(r["y_true"]), np.array(r["y_pred"]),
+            runs.setdefault(r.get("tag", r["mode"]), {})[r["seed"]] = (np.array(r["y_true"]), np.array(r["y_pred"]),
                                                          r.get("test_files"))
     ref = None
     for mode, d in runs.items():   # every run must be on the same test images in the same order
@@ -85,13 +86,15 @@ def holm(pvals):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--results", default="/marimo/results")
+    ap.add_argument("--results", nargs="+", default=["/marimo/results"], help="one or more result dirs")
     ap.add_argument("--n_boot", type=int, default=10000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--pairs", nargs="*", default=None,
+                    help="comparisons as A:B (reports B - A); default = all pairs. Holm is applied over these.")
     a = ap.parse_args()
     runs = load(a.results)
-    modes = [m for m in ["cls", "mt", "mt_geo"] if m in runs] + sorted(set(runs) - {"cls", "mt", "mt_geo"})
+    modes = list(runs)   # in order of first appearance
     yt = next(iter(next(iter(runs.values())).values()))[0]
     N = len(yt)
     rng = np.random.default_rng(a.seed)
@@ -129,7 +132,8 @@ def main():
               "| majority vote:", {k: round(100 * v, 2) for k, v in rec["majority_vote"].items()})
 
     print("\n== 2-3. pairwise: bootstrap CI of the difference (B - A) + exact McNemar")
-    pairs = list(itertools.combinations(modes, 2))
+    pairs = ([tuple(p.split(":")) for p in a.pairs if all(x in runs for x in p.split(":"))]
+             if a.pairs else list(itertools.combinations(modes, 2)))
     p_mv = []
     for A, B in pairs:
         rec = {"A": A, "B": B}

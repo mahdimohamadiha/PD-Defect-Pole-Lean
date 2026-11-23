@@ -108,7 +108,7 @@ class MTNet(nn.Module):
         self.q = nn.Parameter(torch.randn(2, d) * 0.02)           # bottom / top queries
         self.attn = nn.MultiheadAttention(d, 8, batch_first=True)
         self.kp_head = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, d // 2), nn.GELU(), nn.Linear(d // 2, 2))
-        geo_dim = 4 if mode == "mt_geo" else 0
+        geo_dim = {"mt_geo": 4, "mt_geo_d": 3}.get(mode, 0)
         self.cls_head = nn.Sequential(nn.LayerNorm(2 * d + geo_dim), nn.Dropout(0.2),
                                       nn.Linear(2 * d + geo_dim, n_cls))
 
@@ -128,6 +128,8 @@ class MTNet(nn.Module):
         feat = [cls_t, patches.mean(1)]
         if self.mode == "mt_geo":
             feat.append(self.geo_feats(kp))                       # predicted (not GT) geometry
+        elif self.mode == "mt_geo_d":                             # detached: cls loss cannot pull the kp head;
+            feat.append(self.geo_feats(kp.detach())[:, :3])       # drop un-normalised length L
         return self.cls_head(torch.cat(feat, -1)), kp
 
 
@@ -181,7 +183,7 @@ def run(args, seed, idx):
     model.load_state_dict(best[1])
     ys, ps, pr, kq = evaluate(model, te, dev, full=True)
     vys, vps, vpr, vkq = evaluate(model, va, dev, full=True)
-    res = {"seed": seed, "mode": args.mode, "backbone": args.backbone, "best_epoch": best_ep,
+    res = {"seed": seed, "mode": args.mode, "tag": args.tag or args.mode, "backbone": args.backbone, "best_epoch": best_ep,
            "val_macroF1": best[0], "test_acc": accuracy_score(ys, ps),
            "test_macroF1": f1_score(ys, ps, average="macro"),
            "y_true": ys, "y_pred": ps, "test_files": [os.path.basename(i[0]) for i in idx["test"]],
@@ -190,7 +192,7 @@ def run(args, seed, idx):
            "val_files": [os.path.basename(i[0]) for i in idx["val"]], "args": vars(args)}
     if args.ckpt_dir:
         os.makedirs(args.ckpt_dir, exist_ok=True)
-        ck = os.path.join(args.ckpt_dir, f"{args.mode}_s{seed}.pt")
+        ck = os.path.join(args.ckpt_dir, f"{args.tag or args.mode}_s{seed}.pt")
         torch.save({"state_dict": {k: (v.half() if v.is_floating_point() else v) for k, v in best[1].items()},
                     "args": vars(args), "seed": seed, "best_epoch": best_ep, "val_macroF1": best[0],
                     "classes": CLASSES}, ck)
@@ -205,7 +207,7 @@ if __name__ == "__main__":
     ap.add_argument("--root", default="/kaggle/working/pd-defect/pole_lean_assessment")
     ap.add_argument("--download", action="store_true")
     ap.add_argument("--backbone", default="facebook/dinov2-base")   # baseline paper: facebook/dinov3-vitb16-pretrain-lvd1689m (gated)
-    ap.add_argument("--mode", default="mt_geo", choices=["cls", "mt", "mt_geo"])
+    ap.add_argument("--mode", default="mt_geo", choices=["cls", "mt", "mt_geo", "mt_geo_d"])
     ap.add_argument("--size", type=int, default=448)
     ap.add_argument("--epochs", type=int, default=15)
     ap.add_argument("--bs", type=int, default=16)
@@ -215,6 +217,7 @@ if __name__ == "__main__":
     ap.add_argument("--seeds", type=int, nargs="+", default=[0])
     ap.add_argument("--out", default="results.json")
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--tag", default=None, help="experiment name stored in results (default: mode)")
     ap.add_argument("--ckpt_dir", default=None, help="save best checkpoint (fp16) per run here")
     ap.add_argument("--data_dir", default="/kaggle/working/pd-defect", help="download target (--root should be <data_dir>/pole_lean_assessment)")
     a = ap.parse_args()

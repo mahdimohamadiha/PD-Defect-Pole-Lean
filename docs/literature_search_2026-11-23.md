@@ -56,6 +56,46 @@ keypoint supervision for pole lean).
 - Limitation of this search: Google Scholar / Scopus / IEEE Xplore were not queried directly (no API access).
   Semantic Scholar was rate-limited. Re-check before submission.
 
+## Update: browser-based check (Google Scholar, Semantic Scholar, IEEE Xplore, MDPI, Springer, ScienceDirect, Google)
+
+Full report: [`literature_check_chrome_2026-11-23.md`](literature_check_chrome_2026-11-23.md). What it adds:
+
+- **No peer-reviewed paper uses PD-Defect**, apart from the authors' own arXiv:2610.17620. No citations of
+  2610.17620 were shown on Scholar or Semantic Scholar. Absence of citations is "not shown", not proven.
+- **Non-peer-reviewed uses of PD-Defect:**
+  - **Project Talon** (Devpost hackathon, https://devpost.com/software/project-talon-12twbi): a 3-class
+    pole-lean classifier on the same 227-image test split reached top-1 **0.714** and Leaned recall 0.516
+    (single seed). A Leaned_Pole detector reached recall 0.818 / mAP50 0.915. The authors themselves note
+    possible split leakage in PD-Defect, which matches our leakage finding.
+  - **SpanWitness** (Devpost): uses two PD-Defect photos as a demo only, with no numbers.
+  - **OwnEval** "utility pole crossarms": 24 samples from the crossarm keypoint subset (not lean).
+- **Related work to cite** (other data, none jointly learns classification + keypoints):
+  - Luo, Lin, Miu, "A Deep Learning-Based Framework for Automated Power Distribution Pole Inspection in
+    Complex Backgrounds", *IEEE Access* 14 (2026) 88753-88764, doi:10.1109/ACCESS.2026.3702160: UAV;
+    YOLOv11n + PCA/line-fitting angle; F1 82.1%, angle MAE 4.05°.
+  - Wang, Liu, ..., Wei, "Understanding of leaning utility poles for visual monitoring of power distribution
+    infrastructure", *J. Civil Structural Health Monitoring* (2024): monocular, geometric, training-free.
+  - Wang & Wei, "Understanding leaning utility poles with overhead wires for monitoring power distribution
+    infrastructure", *Engineering Applications of Artificial Intelligence* (Oct 2026). **Full text not yet
+    read (captcha); check before submission.**
+  - Dickinson & Di Caterina, BMVC 2025 / arXiv:2608.04061 (DETR + segmentation; 1.01° MAE).
+  - Others (snippet only): Elsayed et al., JOIV 2024; Zaikin et al. 2025 (UAV keypoints → tilt);
+    Zhang et al., IEEE Trans. 2025 (tower segmentation + inclination); Ngamsamer et al. 2026 (point clouds).
+
+### Consolidated implications
+- **Do not claim** to be "the first to use keypoints for pole-lean classification". 2610.17620 already
+  combines a detector with a keypoint-angle rule, as separate models.
+- **Defensible novelty:**
+  1. one network trained jointly (shared backbone) for classification + keypoints;
+  2. a documented, verified leakage-free protocol between the classification and keypoint splits
+     (pixel-verified; 125 test / 189 val images affected), a risk that Project Talon also flags;
+  3. equal-budget tuning and paired statistics on a small test set;
+  4. GT-angle analysis of label subjectivity.
+- **Baselines to report:** the dataset-card DINOv3 number (cited); the 2610.17620-style rule
+  "predicted-keypoint angle > 10°"; optionally mention Project Talon's 0.714 top-1 as an informal reference
+  (non-peer-reviewed; cite as a web resource or omit).
+- **To do before submission:** read Wang & Wei (EAAI 2026) in full; re-run the Scholar "Cited by" check.
+
 ## Links
 - https://arxiv.org/abs/2610.17620
 - https://huggingface.co/datasets/EPDCL/pd-defect

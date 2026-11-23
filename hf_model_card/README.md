@@ -54,8 +54,9 @@ Official classification test split (227 images), mean ± std over 3 seeds, defau
 | `mt` | 85.90 ± 0.44 | 83.41 ± 0.94 |
 
 The auxiliary keypoint loss helps DINOv2 (+4.6 Macro-F1, 95% CI [+2.0, +7.5]) but hurts DINOv2 with
-registers (−3.7, CI [−6.6, −1.0]) at these untuned settings. An equal-budget hyper-parameter search is in
-progress, and tuned checkpoints will be added afterwards.
+registers (−3.7, CI [−6.6, −1.0]) at these untuned settings. An equal-budget hyper-parameter search on
+validation (8 shared configurations, 2 seeds) selected lr 1e-5 / 3e-4, 15 epochs (λ = 2 for `mt`) for both
+modes. Tuned DINOv2 checkpoints (`b4a_final_dinov2/`) are being trained and will be added with their test results.
 
 The dataset card reports a DINOv3 ViT-B/16 baseline of 84.14 Acc / 81.74 Macro-F1. This value lies inside
 our confidence intervals, so no claim of outperforming it is made.

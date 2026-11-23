@@ -5,8 +5,9 @@ Multi-task learning for **utility-pole lean assessment** (Leaned / Straight / Re
 CC BY 4.0). A ViT backbone is fine-tuned for 3-way classification, with an auxiliary head that
 regresses the pole axis (bottom and top keypoints).
 
-> **Status:** work in progress. Batches 1–2 are complete. An equal-budget hyper-parameter search
-> (batch 3, validation only) is running. Numbers below are updated at every stage.
+> **Status:** work in progress. Batches 1–3 are complete, including the DINOv2 hyper-parameter search
+> (validation only). The final DINOv2 test evaluation with the tuned settings (batch 4a) is running.
+> Numbers below are updated at every stage.
 
 ## Results so far
 
@@ -51,6 +52,29 @@ Takeaways so far (default hyper-parameters):
 
 Full outputs: [`b1_dinov2/analysis.txt`](results/marimo/b1_dinov2/analysis.txt),
 [`b2_dinov2reg_geofix/analysis.txt`](results/marimo/b2_dinov2reg_geofix/analysis.txt).
+
+## Hyper-parameter search (DINOv2-base, validation only)
+
+Equal-budget paired random search: 8 shared configurations for `cls` and `mt` (trial 0 = default),
+`mt` additionally gets λ (each of 1, 2, 5, 10 twice), and 2 search seeds (100, 101). The test split is
+never loaded (`--no_test`). Validation Macro-F1, mean over the 2 seeds:
+
+| trial | lr backbone | lr head | epochs | λ (mt) | `cls` | `mt` |
+|---|---|---|---|---|---|---|
+| 0 (default) | 2e-5 | 1e-3 | 15 | 5 | 79.47 (70.94 / 88.01) | 83.43 (83.45 / 83.41) |
+| 1 | 5e-5 | 3e-4 | 15 | 10 | 79.33 | 81.78 |
+| 2 | 3e-5 | 1e-3 | 15 | 10 | 81.78 | 82.87 |
+| 3 | 1e-5 | 1e-3 | 25 | 2 | 84.36 | 84.60 |
+| 4 | 2e-5 | 3e-3 | 25 | 1 | 81.02 | 82.44 |
+| 5 | 3e-5 | 3e-3 | 25 | 5 | 82.66 | 82.61 |
+| 6 | 1e-5 | 3e-3 | 25 | 1 | 84.64 | 83.56 |
+| **7** | **1e-5** | **3e-4** | **15** | **2** | **85.17** | **85.10** |
+
+- Both modes select **the same configuration** (trial 7), with λ = 2 for `mt`. Their validation scores are tied.
+- `cls` is far more sensitive to hyper-parameters (79.3–85.2) and to the seed: at the default setting the two
+  seeds differ by 17 points. `mt` stays within 81.8–85.1, and its seed spread is ≤ 2.6 points in every trial.
+- Output: [`b3_tune_dinov2/analysis.txt`](results/marimo/b3_tune_dinov2/analysis.txt),
+  [`best_configs.json`](results/marimo/b3_tune_dinov2/best_configs.json).
 
 ## Data protocol
 
@@ -99,8 +123,8 @@ Default training settings:
 |---|---|---|
 | `b1_dinov2` | DINOv2-base × {cls, mt, mt_geo} × seeds 0–2 | ✅ done |
 | `b2_dinov2reg_geofix` | DINOv2-with-registers × {cls, mt}; DINOv2 `mt_geo_d`; × seeds 0–2; checkpoints saved | ✅ done |
-| `b3_tune_dinov2` | DINOv2: equal-budget paired random search, 8 shared configs for cls & mt (mt adds λ ∈ {1, 2, 5, 10}), 2 search seeds, **val only** | ⏳ running |
-| `b4a_final_dinov2` | DINOv2: best config per mode from `b3`, seeds 0–2, single test evaluation, checkpoints saved | queued |
+| `b3_tune_dinov2` | DINOv2: equal-budget paired random search, 8 shared configs for cls & mt (mt adds λ ∈ {1, 2, 5, 10}), 2 search seeds, **val only** | ✅ done |
+| `b4a_final_dinov2` | DINOv2: best config per mode from `b3`, seeds 0–2, single test evaluation, checkpoints saved | ⏳ running |
 | `b3b_tune_dinov2reg` | same search (same 8 configs, same λ draws, same seeds) on DINOv2-with-registers | queued |
 | `b4b_final_dinov2reg` | DINOv2-reg: best config per mode from `b3b`, seeds 0–2, single test evaluation, checkpoints saved | planned |
 

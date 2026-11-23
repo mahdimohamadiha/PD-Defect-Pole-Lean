@@ -152,7 +152,8 @@ def run(args, seed, idx):
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     mk = lambda sp, tr: DataLoader(PoleDS(idx[sp], args.size, tr), batch_size=args.bs, shuffle=tr,
                                    num_workers=args.workers, drop_last=tr, persistent_workers=args.workers > 0)
-    tr, va, te = mk("train", True), mk("val", False), mk("test", False)
+    tr, va = mk("train", True), mk("val", False)
+    te = None if args.no_test else mk("test", False)
     model = MTNet(args.backbone, args.size, args.mode).to(dev)
     heads = [p for n, p in model.named_parameters() if not n.startswith("bb.")]
     opt = torch.optim.AdamW([{"params": model.bb.parameters(), "lr": args.lr_bb},
@@ -181,15 +182,16 @@ def run(args, seed, idx):
         if f1 > best[0]:
             best, best_ep = (f1, {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}), ep
     model.load_state_dict(best[1])
-    ys, ps, pr, kq = evaluate(model, te, dev, full=True)
     vys, vps, vpr, vkq = evaluate(model, va, dev, full=True)
     res = {"seed": seed, "mode": args.mode, "tag": args.tag or args.mode, "backbone": args.backbone, "best_epoch": best_ep,
-           "val_macroF1": best[0], "test_acc": accuracy_score(ys, ps),
-           "test_macroF1": f1_score(ys, ps, average="macro"),
-           "y_true": ys, "y_pred": ps, "test_files": [os.path.basename(i[0]) for i in idx["test"]],
-           "test_probs": pr, "test_kp": kq,
+           "val_macroF1": best[0], "val_acc": accuracy_score(vys, vps),
            "val_y_true": vys, "val_y_pred": vps, "val_probs": vpr, "val_kp": vkq,
            "val_files": [os.path.basename(i[0]) for i in idx["val"]], "args": vars(args)}
+    if not args.no_test:   # hyper-parameter search runs use --no_test: the test split is never looked at
+        ys, ps, pr, kq = evaluate(model, te, dev, full=True)
+        res.update({"test_acc": accuracy_score(ys, ps), "test_macroF1": f1_score(ys, ps, average="macro"),
+                    "y_true": ys, "y_pred": ps, "test_files": [os.path.basename(i[0]) for i in idx["test"]],
+                    "test_probs": pr, "test_kp": kq})
     if args.ckpt_dir:
         os.makedirs(args.ckpt_dir, exist_ok=True)
         ck = os.path.join(args.ckpt_dir, f"{args.tag or args.mode}_s{seed}.pt")
@@ -197,7 +199,8 @@ def run(args, seed, idx):
                     "args": vars(args), "seed": seed, "best_epoch": best_ep, "val_macroF1": best[0],
                     "classes": CLASSES}, ck)
         res["checkpoint"] = os.path.basename(ck)
-    print(classification_report(ys, ps, target_names=CLASSES, digits=4))
+    if not args.no_test:
+        print(classification_report(ys, ps, labels=[0, 1, 2], target_names=CLASSES, digits=4, zero_division=0))
     print({k: v for k, v in res.items() if not isinstance(v, (list, dict))})
     return res
 
@@ -219,6 +222,7 @@ if __name__ == "__main__":
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--tag", default=None, help="experiment name stored in results (default: mode)")
     ap.add_argument("--ckpt_dir", default=None, help="save best checkpoint (fp16) per run here")
+    ap.add_argument("--no_test", action="store_true", help="skip the test split entirely (hyper-parameter search)")
     ap.add_argument("--data_dir", default="/kaggle/working/pd-defect", help="download target (--root should be <data_dir>/pole_lean_assessment)")
     a = ap.parse_args()
     if a.download:
@@ -230,5 +234,5 @@ if __name__ == "__main__":
     index = build_index(a.root)
     results = [run(a, s, index) for s in a.seeds]
     json.dump(results, open(a.out, "w"), indent=1)
-    for k in ["test_acc", "test_macroF1"]:
+    for k in (["val_macroF1"] if a.no_test else ["val_macroF1", "test_acc", "test_macroF1"]):
         v = np.array([r[k] for r in results]); print(k, f"{v.mean():.4f} +- {v.std():.4f}")

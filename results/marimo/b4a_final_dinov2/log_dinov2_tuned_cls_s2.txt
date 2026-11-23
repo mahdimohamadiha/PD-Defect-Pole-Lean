@@ -2,3 +2,12 @@
 Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 5054.01it/s]
 /marimo/train_multitask.py:163: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
   scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
+/marimo/train_multitask.py:178: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scaler.step(opt); scaler.update(); sched.step()
+seed2 ep0 val acc 0.7771 macroF1 0.7279
+seed2 ep1 val acc 0.8240 macroF1 0.7885
+seed2 ep2 val acc 0.8240 macroF1 0.7961
+seed2 ep3 val acc 0.8065 macroF1 0.7910
+seed2 ep4 val acc 0.8065 macroF1 0.7834
+seed2 ep5 val acc 0.8065 macroF1 0.7855
+seed2 ep6 val acc 0.8504 macroF1 0.8146

@@ -1,0 +1,34 @@
+{'train': 1706, 'val': 341, 'test': 227} train imgs with kp: 1149 | size mismatches dropped: 87
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4300.11it/s]
+/marimo/train_multitask.py:157: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
+/marimo/train_multitask.py:172: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scaler.step(opt); scaler.update(); sched.step()
+seed1 ep0 val acc 0.7918 macroF1 0.7356
+seed1 ep1 val acc 0.8065 macroF1 0.7602
+seed1 ep2 val acc 0.6804 macroF1 0.6739
+seed1 ep3 val acc 0.7771 macroF1 0.7339
+seed1 ep4 val acc 0.7830 macroF1 0.7598
+seed1 ep5 val acc 0.7830 macroF1 0.7493
+seed1 ep6 val acc 0.8416 macroF1 0.7995
+seed1 ep7 val acc 0.8446 macroF1 0.8115
+seed1 ep8 val acc 0.8270 macroF1 0.7898
+seed1 ep9 val acc 0.8358 macroF1 0.7951
+seed1 ep10 val acc 0.8563 macroF1 0.8276
+seed1 ep11 val acc 0.8534 macroF1 0.8121
+seed1 ep12 val acc 0.8475 macroF1 0.8069
+seed1 ep13 val acc 0.8504 macroF1 0.8097
+seed1 ep14 val acc 0.8504 macroF1 0.8097
+              precision    recall  f1-score   support
+
+      Leaned     0.8000    0.7097    0.7521        62
+    Straight     0.9040    0.8828    0.8933       128
+    Rejected     0.6596    0.8378    0.7381        37
+
+    accuracy                         0.8282       227
+   macro avg     0.7879    0.8101    0.7945       227
+weighted avg     0.8358    0.8282    0.8294       227
+
+{'seed': 1, 'mode': 'mt_geo', 'val_macroF1': 0.8276010877552644, 'test_acc': 0.8281938325991189, 'test_macroF1': 0.7945042075476859}
+test_acc 0.8282 +- 0.0000
+test_macroF1 0.7945 +- 0.0000

@@ -1,0 +1,35 @@
+{'train': 1706, 'val': 341, 'test': 227} train imgs with kp: 1149 | size mismatches dropped: 87
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 5239.18it/s]
+/marimo/train_multitask.py:157: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
+/marimo/train_multitask.py:172: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scaler.step(opt); scaler.update(); sched.step()
+seed0 ep0 val acc 0.6569 macroF1 0.6133
+seed0 ep1 val acc 0.7214 macroF1 0.6908
+seed0 ep2 val acc 0.7595 macroF1 0.7450
+seed0 ep3 val acc 0.7625 macroF1 0.7526
+seed0 ep4 val acc 0.8094 macroF1 0.7721
+seed0 ep5 val acc 0.8328 macroF1 0.8060
+seed0 ep6 val acc 0.8240 macroF1 0.8016
+seed0 ep7 val acc 0.8387 macroF1 0.8076
+seed0 ep8 val acc 0.8299 macroF1 0.8107
+seed0 ep9 val acc 0.8182 macroF1 0.8011
+seed0 ep10 val acc 0.8270 macroF1 0.8074
+seed0 ep11 val acc 0.8299 macroF1 0.8104
+seed0 ep12 val acc 0.8475 macroF1 0.8217
+seed0 ep13 val acc 0.8416 macroF1 0.8170
+seed0 ep14 val acc 0.8475 macroF1 0.8239
+              precision    recall  f1-score   support
+
+      Leaned     0.8070    0.7419    0.7731        62
+    Straight     0.8931    0.9141    0.9035       128
+    Rejected     0.7436    0.7838    0.7632        37
+
+    accuracy                         0.8458       227
+   macro avg     0.8146    0.8133    0.8132       227
+weighted avg     0.8452    0.8458    0.8450       227
+
+{'seed': 0, 'mode': 'cls', 'val_macroF1': 0.823935986095461, 'test_acc': 0.8458149779735683, 'test_macroF1': 0.8132473473030748}
+test_acc 0.8458 +- 0.0000
+test_macroF1 0.8132 +- 0.0000

@@ -98,7 +98,8 @@ Default training settings:
 | `b1_dinov2` | DINOv2-base × {cls, mt, mt_geo} × seeds 0–2 | ✅ done |
 | `b2_dinov2reg_geofix` | DINOv2-with-registers × {cls, mt}; DINOv2 `mt_geo_d`; × seeds 0–2; checkpoints saved | ✅ done |
 | `b3_tune_dinov2` | DINOv2: equal-budget paired random search, 8 shared configs for cls & mt (mt adds λ ∈ {1, 2, 5, 10}), 2 search seeds, **val only** | ⏳ running |
-| `b4` | best config per mode, seeds 0–2, single test evaluation | planned |
+| `b3b_tune_dinov2reg` | same search (same 8 configs, same λ draws, same seeds) on DINOv2-with-registers | queued |
+| `b4` | best config per (backbone, mode), seeds 0–2, single test evaluation, checkpoints saved | planned |
 
 Per-run outputs are in [`results/marimo/`](results/marimo):
 - `res_<tag>_s<seed>.json`: metrics, test/val predictions, probabilities and predicted keypoints

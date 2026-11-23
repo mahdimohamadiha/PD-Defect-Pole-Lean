@@ -1,3 +1,61 @@
-usage: analyze_results.py [-h] [--results RESULTS [RESULTS ...]]
-                          [--n_boot N_BOOT] [--seed SEED] [--out OUT]
-analyze_results.py: error: unrecognized arguments: --pairs dinov2reg_cls:dinov2reg_mt cls:dinov2reg_cls mt:dinov2reg_mt mt:dinov2_mt_geo_d mt_geo:dinov2_mt_geo_d
+test images: 227 | bootstrap resamples: 10000
+
+== 1-2. per mode (mean +- std over seeds; 95% bootstrap CI of the seed-averaged metric)
+cls     seeds=[0, 1, 2]
+   acc      82.23 +- 2.08  CI95 [77.53, 86.49]  card baseline 84.14 inside CI
+   macroF1  78.78 +- 2.39  CI95 [72.86, 83.91]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 75.3, 'Straight': 88.38, 'Rejected': 72.66} | majority vote: {'acc': 82.38, 'macroF1': 79.57}
+mt_geo  seeds=[0, 1, 2]
+   acc      83.55 +- 1.67  CI95 [79.15, 87.67]  card baseline 84.14 inside CI
+   macroF1  80.29 +- 1.95  CI95 [74.55, 85.12]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 76.6, 'Straight': 89.31, 'Rejected': 74.97} | majority vote: {'acc': 85.46, 'macroF1': 82.46}
+mt      seeds=[0, 1, 2]
+   acc      85.90 +- 0.44  CI95 [81.94, 89.57]  card baseline 84.14 inside CI
+   macroF1  83.41 +- 0.94  CI95 [78.32, 87.78]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 80.51, 'Straight': 90.44, 'Rejected': 79.28} | majority vote: {'acc': 86.34, 'macroF1': 84.18}
+dinov2_mt_geo_d seeds=[0, 1, 2]
+   acc      83.41 +- 0.67  CI95 [79.30, 87.22]  card baseline 84.14 inside CI
+   macroF1  80.38 +- 1.79  CI95 [75.03, 84.91]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 75.1, 'Straight': 88.84, 'Rejected': 77.21} | majority vote: {'acc': 85.46, 'macroF1': 82.57}
+dinov2reg_cls seeds=[0, 1, 2]
+   acc      84.88 +- 1.11  CI95 [80.62, 88.69]  card baseline 84.14 inside CI
+   macroF1  82.37 +- 0.97  CI95 [77.20, 86.85]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 80.43, 'Straight': 89.18, 'Rejected': 77.49} | majority vote: {'acc': 85.9, 'macroF1': 83.86}
+dinov2reg_mt seeds=[0, 1, 2]
+   acc      81.50 +- 1.17  CI95 [76.95, 85.76]  card baseline 84.14 inside CI
+   macroF1  78.66 +- 0.99  CI95 [73.11, 83.45]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 73.66, 'Straight': 86.99, 'Rejected': 75.33} | majority vote: {'acc': 82.82, 'macroF1': 80.44}
+
+== 2-3. pairwise: bootstrap CI of the difference (B - A) + exact McNemar
+dinov2reg_mt vs dinov2reg_cls:
+   dacc      -3.38  CI95 [-5.87, -1.03]  P(diff<=0)=0.998
+   dmacroF1  -3.71  CI95 [-6.61, -0.99]  P(diff<=0)=0.995
+   McNemar per seed  s0: b=15 c=9 p=0.307, s1: b=12 c=8 p=0.503, s2: b=16 c=3 p=0.004
+   McNemar maj.vote  b=12 c=5 p=0.1435  Holm-adj p=0.4304
+   (b = A right & B wrong, c = A wrong & B right)
+dinov2reg_cls vs cls:
+   dacc      +2.64  CI95 [-0.15, +5.58]  P(diff<=0)=0.036
+   dmacroF1  +3.58  CI95 [+0.22, +7.07]  P(diff<=0)=0.018
+   McNemar per seed  s0: b=10 c=11 p=1.000, s1: b=8 c=15 p=0.210, s2: b=8 c=18 p=0.076
+   McNemar maj.vote  b=5 c=13 p=0.0963  Holm-adj p=0.3850
+   (b = A right & B wrong, c = A wrong & B right)
+dinov2reg_mt vs mt:
+   dacc      -4.41  CI95 [-7.05, -2.06]  P(diff<=0)=1.000
+   dmacroF1  -4.75  CI95 [-7.80, -1.99]  P(diff<=0)=0.999
+   McNemar per seed  s0: b=19 c=11 p=0.200, s1: b=19 c=9 p=0.087, s2: b=17 c=5 p=0.017
+   McNemar maj.vote  b=10 c=2 p=0.0386  Holm-adj p=0.1929
+   (b = A right & B wrong, c = A wrong & B right)
+dinov2_mt_geo_d vs mt:
+   dacc      -2.50  CI95 [-4.85, -0.15]  P(diff<=0)=0.985
+   dmacroF1  -3.03  CI95 [-5.66, -0.53]  P(diff<=0)=0.990
+   McNemar per seed  s0: b=17 c=13 p=0.585, s1: b=14 c=7 p=0.189, s2: b=21 c=15 p=0.405
+   McNemar maj.vote  b=8 c=6 p=0.7905  Holm-adj p=1.0000
+   (b = A right & B wrong, c = A wrong & B right)
+dinov2_mt_geo_d vs mt_geo:
+   dacc      -0.15  CI95 [-2.35, +2.06]  P(diff<=0)=0.567
+   dmacroF1  +0.09  CI95 [-2.48, +2.59]  P(diff<=0)=0.474
+   McNemar per seed  s0: b=10 c=14 p=0.541, s1: b=10 c=11 p=1.000, s2: b=15 c=9 p=0.307
+   McNemar maj.vote  b=6 c=6 p=1.0000  Holm-adj p=1.0000
+   (b = A right & B wrong, c = A wrong & B right)
+
+saved /marimo/results/b2_dinov2reg_geofix/analysis.json

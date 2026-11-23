@@ -7,6 +7,7 @@ with app.setup:
     import os, sys, json, glob, re, subprocess, time
     import numpy as np
     import marimo as mo
+    from huggingface_hub import HfApi
 
     WORK = "/marimo"
     DATA_DIR = f"{WORK}/data/pd-defect"
@@ -50,15 +51,55 @@ def download():
 
 @app.cell
 def plan():
-    MODES = ["cls", "mt", "mt_geo"]
+    # ---- batch 2: DINOv3 baseline + fixed geometry head (batch 1 = results/b1_dinov2, DINOv2, cls/mt/mt_geo)
+    BATCH = "b2_dinov3_geofix"
+    DINOV3 = "facebook/dinov3-vitb16-pretrain-lvd1689m"   # gated on HF: needs an accepted licence + token
+    CKPT_REPO = "mahdimohamadiha/pd-defect-pole-lean-checkpoints"
+    EXPERIMENTS = {                                       # tag -> extra args (rest = script defaults: 15 ep, 448 px, bs 16)
+        "dinov3_cls": ["--mode", "cls", "--backbone", DINOV3],
+        "dinov3_mt": ["--mode", "mt", "--backbone", DINOV3],
+        "dinov2_mt_geo_d": ["--mode", "mt_geo_d"],         # detached geometry, no length feature
+    }
     SEEDS = [0, 1, 2]
-    EXTRA_ARGS = ["--workers", "12"]   # all other hyper-parameters = script defaults (15 ep, 448 px, bs 16)
-    RUNS = [(m, s) for s in SEEDS for m in MODES]   # seed-major: partial results stay balanced across modes
-    return EXTRA_ARGS, RUNS
+    COMMON_ARGS = ["--workers", "12"]
+    RUN_DIR = f"{RESULTS}/{BATCH}"
+    CKPT_DIR = f"{WORK}/checkpoints/{BATCH}"
+    RUNS = [(t, s) for s in SEEDS for t in EXPERIMENTS]   # seed-major: partial results stay balanced
+    ANALYSIS_PAIRS = ["cls:dinov3_cls", "dinov3_cls:dinov3_mt", "mt:dinov3_mt", "mt:dinov2_mt_geo_d", "mt_geo:dinov2_mt_geo_d"]
+    return (
+        ANALYSIS_PAIRS,
+        BATCH,
+        CKPT_DIR,
+        CKPT_REPO,
+        COMMON_ARGS,
+        DINOV3,
+        EXPERIMENTS,
+        RUNS,
+        RUN_DIR,
+    )
 
 
 @app.cell
-def launch(EXTRA_ARGS, RUNS, n_images):
+def hf_token():
+    hf_token = mo.ui.text(kind="password", full_width=True,
+                          label="Hugging Face token (read gated repos + write to the checkpoints repo). Never saved in the notebook file.")
+    hf_token
+    return (hf_token,)
+
+
+@app.cell
+def launch(
+    BATCH,
+    CKPT_DIR,
+    CKPT_REPO,
+    COMMON_ARGS,
+    DINOV3,
+    EXPERIMENTS,
+    RUNS,
+    RUN_DIR,
+    hf_token,
+    n_images,
+):
     def _alive(pid):
         try:
             os.kill(pid, 0)
@@ -66,19 +107,37 @@ def launch(EXTRA_ARGS, RUNS, n_images):
         except OSError:
             return False
 
-    _pid_file = f"{RESULTS}/runner.pid"
+    _token = hf_token.value.strip()
+    _needs_token = any(DINOV3 in v for v in EXPERIMENTS.values())
+    _pid_file = f"{RUN_DIR}/runner.pid"
     _running = os.path.exists(_pid_file) and _alive(int(open(_pid_file).read()))
-    _todo = [(m, s) for m, s in RUNS if not os.path.exists(f"{RESULTS}/res_{m}_s{s}.json")]
-    if n_images == 4072 and _todo and not _running:
-        _cmd = " ; ".join(
-            f"{sys.executable} -u {SCRIPT} --root {ROOT} --mode {m} --seeds {s} "
-            f"--out {RESULTS}/res_{m}_s{s}.json {' '.join(EXTRA_ARGS)} > {RESULTS}/log_{m}_s{s}.txt 2>&1"
-            for m, s in _todo)
-        _p = subprocess.Popen(["bash", "-c", _cmd], cwd=WORK, start_new_session=True)
-        open(_pid_file, "w").write(str(_p.pid))
-        _running = True
+    _todo = [(t, s) for t, s in RUNS if not os.path.exists(f"{RUN_DIR}/res_{t}_s{s}.json")]
+    _msg = ""
+    if not _running and _todo and not _token:
+        _msg = "Paste the HF token above to start this batch."
+    elif not _running and _todo and n_images == 4072:
+        try:
+            _api = HfApi(token=_token)
+            if _needs_token:
+                _api.model_info(DINOV3)
+            _api.repo_info(CKPT_REPO)
+        except Exception as _e:
+            _msg = f"HF access check failed ({type(_e).__name__}): {str(_e)[:300]}"
+        else:
+            os.makedirs(RUN_DIR, exist_ok=True)
+            os.makedirs(CKPT_DIR, exist_ok=True)
+            _cmd = " ; ".join(
+                f"{sys.executable} -u {SCRIPT} --root {ROOT} --tag {t} --seeds {s} "
+                f"{' '.join(EXPERIMENTS[t] + COMMON_ARGS)} --ckpt_dir {CKPT_DIR} "
+                f"--out {RUN_DIR}/res_{t}_s{s}.json > {RUN_DIR}/log_{t}_s{s}.txt 2>&1"
+                for t, s in _todo)
+            _p = subprocess.Popen(["bash", "-c", _cmd], cwd=WORK, start_new_session=True,
+                                  env=dict(os.environ, HF_TOKEN=_token))
+            open(_pid_file, "w").write(str(_p.pid))
+            _running = True
     run_all = {"running": _running, "todo": _todo}
-    mo.md(f"**Runner:** {'running' if _running else 'idle'} · remaining runs: {len(_todo)} / {len(RUNS)}")
+    mo.md(f"**Runner ({BATCH}):** {'running' if _running else 'idle'} · remaining runs: {len(_todo)} / {len(RUNS)}"
+          + (f"<br>⚠️ {_msg}" if _msg else ""))
     return
 
 
@@ -90,12 +149,12 @@ def refresh():
 
 
 @app.cell
-def status(RUNS, refresh):
+def status(BATCH, RUNS, RUN_DIR, refresh):
     refresh.value
     _rows = []
-    for _m, _s in RUNS:
-        _res, _log = f"{RESULTS}/res_{_m}_s{_s}.json", f"{RESULTS}/log_{_m}_s{_s}.txt"
-        _row = {"mode": _m, "seed": _s, "state": "pending", "last epoch": "", "test acc": "", "test macroF1": ""}
+    for _t, _s in RUNS:
+        _res, _log = f"{RUN_DIR}/res_{_t}_s{_s}.json", f"{RUN_DIR}/log_{_t}_s{_s}.txt"
+        _row = {"experiment": _t, "seed": _s, "state": "pending", "last epoch": "", "test acc": "", "test macroF1": ""}
         if os.path.exists(_res):
             _r = json.load(open(_res))[0]
             _row.update(state="done", **{"test acc": round(100 * _r["test_acc"], 2),
@@ -108,22 +167,48 @@ def status(RUNS, refresh):
             if _row["state"] == "pending":
                 _row["state"] = "error" if "Traceback" in _txt else "running"
         _rows.append(_row)
-    mo.ui.table(_rows, selection=None, label="Runs")
+    mo.ui.table(_rows, selection=None, label=f"Runs · {BATCH}")
     return
 
 
 @app.cell
-def analysis(RUNS, refresh):
+def upload(BATCH, CKPT_DIR, CKPT_REPO, RUNS, RUN_DIR, hf_token, refresh):
     refresh.value
-    _out = f"{RESULTS}/analysis.txt"
-    _n_done = len(glob.glob(f"{RESULTS}/res_*.json"))
+    _tok = hf_token.value.strip()
+    _uploaded, _err = [], ""
+    if _tok and os.path.isdir(CKPT_DIR):
+        _api = HfApi(token=_tok)
+        for _f in sorted(glob.glob(f"{CKPT_DIR}/*.pt")):
+            _name = os.path.basename(_f)[:-3]
+            _mark = _f + ".uploaded"
+            # the result json is written after the checkpoint, so its presence means the .pt is complete
+            if not os.path.exists(_mark) and os.path.exists(f"{RUN_DIR}/res_{_name}.json"):
+                try:
+                    _api.upload_file(path_or_fileobj=_f, path_in_repo=f"{BATCH}/{os.path.basename(_f)}",
+                                     repo_id=CKPT_REPO, commit_message=f"{BATCH}: {_name}")
+                    open(_mark, "w").write(time.ctime())
+                except Exception as _e:
+                    _err = f"{type(_e).__name__}: {str(_e)[:200]}"
+                    break
+            if os.path.exists(_mark):
+                _uploaded.append(_name)
+    mo.md(f"**Checkpoints on HF** (`{CKPT_REPO}/{BATCH}`): {len(_uploaded)} / {len(RUNS)}"
+          + (f"<br>⚠️ upload error: {_err}" if _err else ""))
+    return
+
+
+@app.cell
+def analysis(ANALYSIS_PAIRS, BATCH, RUNS, RUN_DIR, refresh):
+    refresh.value
+    _out = f"{RUN_DIR}/analysis.txt"
+    _n_done = len(glob.glob(f"{RUN_DIR}/res_*.json"))
     if _n_done == len(RUNS) and not os.path.exists(_out):
-        _r = subprocess.run([sys.executable, f"{WORK}/analyze_results.py", "--results", RESULTS,
-                             "--n_boot", "10000", "--out", f"{RESULTS}/analysis.json"],
+        _r = subprocess.run([sys.executable, f"{WORK}/analyze_results.py", "--results", f"{RESULTS}/b1_dinov2", RUN_DIR,
+                             "--n_boot", "10000", "--out", f"{RUN_DIR}/analysis.json", "--pairs", *ANALYSIS_PAIRS],
                             capture_output=True, text=True)
         open(_out, "w").write(_r.stdout + _r.stderr)
     analysis_text = open(_out).read() if os.path.exists(_out) else None
-    mo.md("## Statistical analysis\n" + (f"```\n{analysis_text}\n```" if analysis_text
+    mo.md(f"## Statistical analysis · {BATCH} (vs batch 1)\n" + (f"```\n{analysis_text}\n```" if analysis_text
           else f"_Waiting for all runs: {_n_done} / {len(RUNS)} done._"))
     return
 

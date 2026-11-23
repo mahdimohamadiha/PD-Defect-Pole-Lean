@@ -1,0 +1,3 @@
+usage: analyze_results.py [-h] [--results RESULTS [RESULTS ...]]
+                          [--n_boot N_BOOT] [--seed SEED] [--out OUT]
+analyze_results.py: error: unrecognized arguments: --pairs dinov2reg_cls:dinov2reg_mt cls:dinov2reg_cls mt:dinov2reg_mt mt:dinov2_mt_geo_d mt_geo:dinov2_mt_geo_d

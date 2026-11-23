@@ -1,0 +1,34 @@
+{'train': 1706, 'val': 341, 'test': 227} train imgs with kp: 1149 | size mismatches dropped: 87
+Loading weights:   0%|          | 0/224 [00:00<?, ?it/s]Loading weights: 100%|██████████| 224/224 [00:00<00:00, 4443.67it/s]
+/marimo/train_multitask.py:162: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
+/marimo/train_multitask.py:177: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scaler.step(opt); scaler.update(); sched.step()
+seed2 ep0 val acc 0.7038 macroF1 0.6607
+seed2 ep1 val acc 0.7683 macroF1 0.7185
+seed2 ep2 val acc 0.7947 macroF1 0.7685
+seed2 ep3 val acc 0.8182 macroF1 0.7945
+seed2 ep4 val acc 0.7361 macroF1 0.7170
+seed2 ep5 val acc 0.8534 macroF1 0.8300
+seed2 ep6 val acc 0.8534 macroF1 0.8311
+seed2 ep7 val acc 0.8563 macroF1 0.8256
+seed2 ep8 val acc 0.8563 macroF1 0.8291
+seed2 ep9 val acc 0.8622 macroF1 0.8412
+seed2 ep10 val acc 0.8622 macroF1 0.8386
+seed2 ep11 val acc 0.8739 macroF1 0.8516
+seed2 ep12 val acc 0.8680 macroF1 0.8463
+seed2 ep13 val acc 0.8680 macroF1 0.8463
+seed2 ep14 val acc 0.8680 macroF1 0.8463
+              precision    recall  f1-score   support
+
+      Leaned     0.7143    0.7258    0.7200        62
+    Straight     0.8640    0.8438    0.8538       128
+    Rejected     0.7436    0.7838    0.7632        37
+
+    accuracy                         0.8018       227
+   macro avg     0.7740    0.7844    0.7790       227
+weighted avg     0.8035    0.8018    0.8025       227
+
+{'seed': 2, 'mode': 'mt', 'tag': 'dinov2reg_mt', 'backbone': 'facebook/dinov2-with-registers-base', 'best_epoch': 11, 'val_macroF1': 0.8516448300019377, 'test_acc': 0.801762114537445, 'test_macroF1': 0.7789709451494349, 'checkpoint': 'dinov2reg_mt_s2.pt'}
+test_acc 0.8018 +- 0.0000
+test_macroF1 0.7790 +- 0.0000

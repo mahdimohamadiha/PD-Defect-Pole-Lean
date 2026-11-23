@@ -16,3 +16,19 @@ seed2 ep8 val acc 0.8563 macroF1 0.8308
 seed2 ep9 val acc 0.8622 macroF1 0.8403
 seed2 ep10 val acc 0.8651 macroF1 0.8423
 seed2 ep11 val acc 0.8680 macroF1 0.8462
+seed2 ep12 val acc 0.8622 macroF1 0.8389
+seed2 ep13 val acc 0.8592 macroF1 0.8361
+seed2 ep14 val acc 0.8592 macroF1 0.8361
+              precision    recall  f1-score   support
+
+      Leaned     0.8095    0.8226    0.8160        62
+    Straight     0.9180    0.8750    0.8960       128
+    Rejected     0.7381    0.8378    0.7848        37
+
+    accuracy                         0.8546       227
+   macro avg     0.8219    0.8451    0.8323       227
+weighted avg     0.8591    0.8546    0.8560       227
+
+{'seed': 2, 'mode': 'mt', 'val_macroF1': 0.8461988304093567, 'test_acc': 0.8546255506607929, 'test_macroF1': 0.8322700421940928}
+test_acc 0.8546 +- 0.0000
+test_macroF1 0.8323 +- 0.0000

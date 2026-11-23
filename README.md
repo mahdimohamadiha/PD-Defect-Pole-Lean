@@ -44,6 +44,8 @@ Takeaways so far (default hyper-parameters):
 - DINOv2-with-registers is a stronger classification-only baseline than DINOv2.
 - Feeding predicted geometry into the classifier does not help: `mt_geo` and its fixed variant `mt_geo_d`
   perform the same, and both are below `mt`.
+  These variants are therefore reported as **ablations at the default hyper-parameters** and are not
+  included in the hyper-parameter search, which is spent on the main `cls` vs `mt` comparison.
 - No McNemar test survives Holm correction. With 227 test images, the paired bootstrap is the more
   sensitive test, and both are reported.
 

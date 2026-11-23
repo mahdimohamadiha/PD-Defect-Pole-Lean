@@ -1,0 +1,37 @@
+test images: 227 | bootstrap resamples: 10000
+
+== 1-2. per mode (mean +- std over seeds; 95% bootstrap CI of the seed-averaged metric)
+cls     seeds=[0, 1, 2]
+   acc      82.23 +- 2.08  CI95 [77.53, 86.49]  card baseline 84.14 inside CI
+   macroF1  78.78 +- 2.39  CI95 [72.86, 83.91]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 75.3, 'Straight': 88.38, 'Rejected': 72.66} | majority vote: {'acc': 82.38, 'macroF1': 79.57}
+mt      seeds=[0, 1, 2]
+   acc      85.90 +- 0.44  CI95 [81.94, 89.57]  card baseline 84.14 inside CI
+   macroF1  83.41 +- 0.94  CI95 [78.32, 87.78]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 80.51, 'Straight': 90.44, 'Rejected': 79.28} | majority vote: {'acc': 86.34, 'macroF1': 84.18}
+mt_geo  seeds=[0, 1, 2]
+   acc      83.55 +- 1.67  CI95 [79.15, 87.67]  card baseline 84.14 inside CI
+   macroF1  80.29 +- 1.95  CI95 [74.55, 85.12]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 76.6, 'Straight': 89.31, 'Rejected': 74.97} | majority vote: {'acc': 85.46, 'macroF1': 82.46}
+
+== 2-3. pairwise: bootstrap CI of the difference (B - A) + exact McNemar
+mt vs cls:
+   dacc      +3.67  CI95 [+1.47, +6.02]  P(diff<=0)=0.001
+   dmacroF1  +4.63  CI95 [+1.98, +7.46]  P(diff<=0)=0.000
+   McNemar per seed  s0: b=10 c=13 p=0.678, s1: b=4 c=17 p=0.007, s2: b=4 c=13 p=0.049
+   McNemar maj.vote  b=3 c=12 p=0.0352  Holm-adj p=0.1055
+   (b = A right & B wrong, c = A wrong & B right)
+mt_geo vs cls:
+   dacc      +1.32  CI95 [-1.03, +3.82]  P(diff<=0)=0.144
+   dmacroF1  +1.51  CI95 [-1.23, +4.42]  P(diff<=0)=0.141
+   McNemar per seed  s0: b=11 c=6 p=0.332, s1: b=8 c=13 p=0.383, s2: b=12 c=21 p=0.163
+   McNemar maj.vote  b=5 c=12 p=0.1435  Holm-adj p=0.2869
+   (b = A right & B wrong, c = A wrong & B right)
+mt_geo vs mt:
+   dacc      -2.35  CI95 [-4.70, -0.15]  P(diff<=0)=0.984
+   dmacroF1  -3.12  CI95 [-5.70, -0.73]  P(diff<=0)=0.996
+   McNemar per seed  s0: b=13 c=5 p=0.096, s1: b=16 c=8 p=0.152, s2: b=13 c=13 p=1.000
+   McNemar maj.vote  b=8 c=6 p=0.7905  Holm-adj p=0.7905
+   (b = A right & B wrong, c = A wrong & B right)
+
+saved /marimo/results/analysis.json

@@ -1,41 +1,133 @@
-# PD-Defect – Pole Lean: geometry-aware multi-task model
+# Keypoint-supervised pole-lean classification on PD-Defect
 
-Classification (Leaned / Straight / Rejected) + pole-axis keypoints (bottom, top) on the
-[EPDCL/pd-defect](https://huggingface.co/datasets/EPDCL/pd-defect) dataset (`pole_lean_assessment`).
+Multi-task learning for **utility-pole lean assessment** (Leaned / Straight / Rejected) on the
+[PD-Defect](https://huggingface.co/datasets/EPDCL/pd-defect) dataset (`pole_lean_assessment` subset,
+CC BY 4.0). A ViT backbone is fine-tuned for 3-way classification, with an auxiliary head that
+regresses the pole axis (bottom and top keypoints).
 
-## Protocol
-- Only the official **classification** split (train/val/test) is used, so results are comparable
-  with the dataset paper's DINOv3 baseline (test Acc 84.14, Macro-F1 81.74).
-- Keypoint labels are used **only for images in classification/train** (matched by file stem and
-  verified by image size). The keypoint subset has its own, different split, so using its labels
-  for classification val/test images would leak.
-- `Rejected` images: the keypoint loss is masked for them (34 Rejected train images do have matching
-  keypoint labels; they are deliberately ignored, so the geometry head only sees usable images).
-- Verified (pixel diff): same-stem images in the two subsets are the same photo (max diff ~0.14/255), so the
-  split mismatch is real leakage. 112 same-stem pairs differ in size (crops) and are dropped by the size check.
-- Augmentation: horizontal flip + color jitter only (rotation/shear would change the lean label).
+> **Status:** work in progress. Batch 1 is complete. Batch 2 (second backbone + fixed geometry head)
+> is running. An equal-budget hyper-parameter search follows. Numbers below are updated at every stage.
 
-## Modes
+## Main result so far
+
+DINOv2-base, full fine-tuning, official test split (227 images), mean ± std over 3 seeds:
+
+| model | Acc | Macro-F1 | F1 Leaned | F1 Straight | F1 Rejected |
+|---|---|---|---|---|---|
+| `cls` (classification only) | 82.23 ± 2.08 | 78.78 ± 2.39 | 75.3 | 88.4 | 72.7 |
+| **`mt` (+ auxiliary keypoint loss)** | **85.90 ± 0.44** | **83.41 ± 0.94** | **80.5** | **90.4** | **79.3** |
+| `mt_geo` (+ head on predicted geometry) | 83.55 ± 1.67 | 80.29 ± 1.95 | 76.6 | 89.3 | 75.0 |
+| dataset-card baseline (DINOv3 ViT-B/16)\* | 84.14 | 81.74 | – | – | – |
+
+\* Taken from the dataset card and not reproduced here, because DINOv3 is gated and access was not
+granted to us. The card value lies inside our 95% CIs, so we make **no claim of beating it**. All
+statistical claims compare our own models, trained with the same code.
+
+**Statistics** (paired bootstrap over test images, 10,000 resamples; exact McNemar on seed-majority votes, Holm-corrected):
+
+| comparison | Δ Macro-F1 | 95% CI | McNemar p (Holm) |
+|---|---|---|---|
+| `mt` vs `cls` | **+4.63** | [+1.98, +7.46] | 0.035 (0.105) |
+| `mt_geo` vs `cls` | +1.51 | [−1.23, +4.42] | 0.14 (0.29) |
+| `mt_geo` vs `mt` | −3.12 | [−5.70, −0.73] | 0.79 |
+
+Takeaways:
+- The auxiliary keypoint loss improves Macro-F1 (the CI excludes 0) and markedly reduces seed variance.
+- Feeding the predicted geometry into the classifier (`mt_geo`) hurts. A fixed variant (`mt_geo_d`) is
+  being evaluated in batch 2.
+
+Full output: [`results/marimo/b1_dinov2/analysis.txt`](results/marimo/b1_dinov2/analysis.txt).
+
+## Data protocol
+
+- **Only the official classification split** is used: train 1706 / val 341 / test 227
+  (Leaned 619, Straight 1281, Rejected 374).
+- **Leakage check.** The keypoint subset has its *own* split, so it overlaps with the classification split:
+  - 1,676 classification images share a file stem with a keypoint image.
+  - Pixel comparison shows that 1,564 of these pairs are the same photo re-encoded (max mean abs.
+    difference 0.14/255). The other 112 are re-cropped versions with a different size.
+  - **125 test and 189 val classification images appear in the keypoint *train* split.** Using the
+    keypoint split as-is would leak.
+- Keypoint labels are therefore used **only for classification-train images**, matched by stem *and*
+  image size. Cropped copies are dropped, because normalised coordinates would not transfer to them.
+  This leaves 1,149 train images with keypoints.
+- The keypoint loss is **masked for `Rejected`** images. 34 of them have keypoint labels, which are ignored on purpose.
+- Augmentation is horizontal flip (keypoints mirrored) and colour jitter only. Rotation or shear would change the lean label.
+
+GT geometry vs label (train split only):
+- The axis angle separates Leaned from Straight with AUC 0.965. A 3° threshold agrees with the label on 90.8% of images.
+- 16.8% of Leaned poles are below 3° and 5.3% of Straight poles are above it. This is evidence of subjective
+  or borderline labels, which matches the caveats on the dataset card.
+
+## Model
+
+`MTNet` (in `train_multitask.py`) is a Hugging Face ViT backbone with two heads:
+- (a) a classification head on `[CLS ; mean(patches)]`;
+- (b) two learned queries that cross-attend to the patch tokens and predict the bottom/top keypoints
+  (sigmoid, normalised coordinates).
+
 | mode | description |
 |---|---|
-| `cls` | baseline, classification only |
-| `mt` | + auxiliary keypoint loss |
-| `mt_geo` | + classification head conditioned on geometry of the *predicted* axis |
+| `cls` | classification loss only |
+| `mt` | + λ · SmoothL1 keypoint loss (masked where there are no keypoints) |
+| `mt_geo` | `mt`, plus the classifier also sees the geometry of the *predicted* axis (sin θ, \|sin θ\|, cos θ, length) |
+| `mt_geo_d` | as `mt_geo`, but the geometry comes from **detached** keypoints and has no length term |
 
-## Run on Kaggle (GPU T4/P100, Internet ON)
-```bash
-!git clone https://github.com/mahdimohamadiha/pd-defect-pole-lean.git
-%cd pd-defect-pole-lean
-!pip -q install transformers huggingface_hub scikit-learn
-!python train_multitask.py --download --mode cls    --seeds 0 1 2 --out res_cls.json
-!python train_multitask.py --download --mode mt     --seeds 0 1 2 --out res_mt.json
-!python train_multitask.py --download --mode mt_geo --seeds 0 1 2 --out res_mt_geo.json
+Default training settings:
+- 448 px input, batch 16
+- AdamW (weight decay 0.05) with OneCycle; lr 2e-5 for the backbone and 1e-3 for the heads
+- 15 epochs, λ = 5, class-weighted cross-entropy
+- the best epoch is chosen on **val** Macro-F1, and test is evaluated once
+
+## Experiment log
+
+| batch | content | status |
+|---|---|---|
+| `b1_dinov2` | DINOv2-base × {cls, mt, mt_geo} × seeds 0–2 | ✅ done |
+| `b2_dinov2reg_geofix` | DINOv2-with-registers × {cls, mt}; DINOv2 `mt_geo_d`; × seeds 0–2; checkpoints saved | ⏳ running |
+| `b3_tune_dinov2` | equal-budget paired random search: 8 shared configs for cls & mt (mt adds λ), 2 search seeds, **val only** | planned |
+| `b4` | best config per mode, seeds 0–2, single test evaluation | planned |
+
+Per-run outputs are in [`results/marimo/`](results/marimo):
+- `res_<tag>_s<seed>.json`: metrics, test/val predictions, probabilities and predicted keypoints
+- `log_*.txt`: training logs
+
+Fine-tuned checkpoints (from batch 2 onwards) are on the Hugging Face Hub:
+[`northlattice/pd-defect-pole-lean-checkpoints`](https://huggingface.co/northlattice/pd-defect-pole-lean-checkpoints).
+
+## Repository layout
+
 ```
-For a private repo, store a GitHub token in Kaggle Secrets and clone with
-`https://<TOKEN>@github.com/mahdimohamadiha/pd-defect-pole-lean.git`.
+train_multitask.py      training / evaluation (all modes, any HF ViT backbone)
+analyze_results.py      bootstrap CIs, exact McNemar + Holm, comparison with the card baseline
+tune_summary.py         ranks hyper-parameter search trials (validation only)
+notebooks/              marimo notebook that drives the runs (synced from the compute sandbox)
+results/marimo/<batch>/ per-run results, logs and analysis
+```
 
-Baseline backbone in the dataset paper: `facebook/dinov3-vitb16-pretrain-lvd1689m` (gated on HF);
-pass it via `--backbone`. Default here is `facebook/dinov2-base`.
+## Reproduce
 
-## Status
-CPU smoke test (tiny subset, all 3 modes, dinov2-base) passes end to end. Full GPU runs not done yet.
+```bash
+pip install torch torchvision transformers huggingface_hub scikit-learn pillow
+```
+```bash
+python train_multitask.py --download --data_dir data/pd-defect --root data/pd-defect/pole_lean_assessment --mode mt --seeds 0 1 2 --workers 8 --out res_mt.json
+```
+```bash
+python analyze_results.py --results <dir with res_*.json> --n_boot 10000
+```
+
+Hardware: one NVIDIA RTX PRO 6000 (96 GB). A 15-epoch run takes about 4.5 min.
+
+## Data and citation
+
+PD-Defect is released by its authors under CC BY 4.0:
+
+```bibtex
+@misc{pddefect,
+  author    = {Masabathula, Sampath Balaji and Vanapalli, Srija and Kanchi, Gangadhar and
+               V.A.N, Sreenivasa Rao and V, Vijaya Lalitha and Chilamkurthy, Sasank},
+  title     = {{PD-Defect: A Field-Captured Smartphone Image Dataset for AI-Based Inspection of Power Distribution Infrastructure}},
+  year      = {2026}, publisher = {figshare}, doi = {10.6084/m9.figshare.34329402}
+}
+```

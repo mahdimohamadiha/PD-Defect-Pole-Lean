@@ -37,8 +37,7 @@ cd $R
 git add -A results notebooks
 if ! git diff --cached --quiet; then
   n=$(find $DEST -name "res_*.json" | wc -l)
-  git commit -q -m "Results sync from marimo sandbox ($n result files)
-
+  git commit -q -m "Results sync from marimo sandbox ($n result files)"
   for i in 1 2 3 4; do git -c push.negotiate=true push -q origin main 2>&1 | grep -v '^remote:' && sleep $((2**i)) || break; done
   echo "sync: pushed $n_fetch file(s) ($n result files total)"
 else echo "sync: no change"; fi

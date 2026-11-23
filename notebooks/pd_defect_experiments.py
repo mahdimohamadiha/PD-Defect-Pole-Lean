@@ -88,6 +88,13 @@ def hf_token():
 
 
 @app.cell
+def refresh():
+    refresh = mo.ui.refresh(default_interval="30s", label="auto-refresh")
+    refresh
+    return (refresh,)
+
+
+@app.cell
 def launch(
     BATCH,
     CKPT_DIR,
@@ -99,7 +106,10 @@ def launch(
     RUN_DIR,
     hf_token,
     n_images,
+    refresh,
 ):
+    refresh.value   # re-check every refresh tick: picks up DINOv3 as soon as access is granted
+
     def _alive(pid):
         try:
             os.kill(pid, 0)
@@ -107,45 +117,52 @@ def launch(
         except OSError:
             return False
 
+    def _failed(t, s):
+        _log = f"{RUN_DIR}/log_{t}_s{s}.txt"
+        return os.path.exists(_log) and "Traceback" in open(_log).read()
+
     _token = hf_token.value.strip()
-    _needs_token = any(DINOV3 in v for v in EXPERIMENTS.values())
     _pid_file = f"{RUN_DIR}/runner.pid"
     _running = os.path.exists(_pid_file) and _alive(int(open(_pid_file).read()))
     _todo = [(t, s) for t, s in RUNS if not os.path.exists(f"{RUN_DIR}/res_{t}_s{s}.json")]
-    _msg = ""
+    _blocked, _msg = [], ""
     if not _running and _todo and not _token:
         _msg = "Paste the HF token above to start this batch."
     elif not _running and _todo and n_images == 4072:
+        _api = HfApi(token=_token)
         try:
-            _api = HfApi(token=_token)
-            if _needs_token:
-                _api.model_info(DINOV3)
             _api.repo_info(CKPT_REPO)
+            _ok_repo = True
         except Exception as _e:
-            _msg = f"HF access check failed ({type(_e).__name__}): {str(_e)[:300]}"
-        else:
+            _ok_repo, _msg = False, f"checkpoint repo not accessible ({type(_e).__name__}): {str(_e)[:200]}"
+        _gated_ok = {}
+        for _bb in {DINOV3}:
+            try:
+                _api.model_info(_bb)
+                _gated_ok[_bb] = True
+            except Exception:
+                _gated_ok[_bb] = False
+        _ready = [(t, s) for t, s in _todo if not _failed(t, s)
+                  and all(_gated_ok.get(b, True) for b in EXPERIMENTS[t] if b in _gated_ok)]
+        _blocked = sorted({t for t, s in _todo if (t, s) not in _ready})
+        if _ok_repo and _ready:
             os.makedirs(RUN_DIR, exist_ok=True)
             os.makedirs(CKPT_DIR, exist_ok=True)
             _cmd = " ; ".join(
                 f"{sys.executable} -u {SCRIPT} --root {ROOT} --tag {t} --seeds {s} "
                 f"{' '.join(EXPERIMENTS[t] + COMMON_ARGS)} --ckpt_dir {CKPT_DIR} "
                 f"--out {RUN_DIR}/res_{t}_s{s}.json > {RUN_DIR}/log_{t}_s{s}.txt 2>&1"
-                for t, s in _todo)
+                for t, s in _ready)
             _p = subprocess.Popen(["bash", "-c", _cmd], cwd=WORK, start_new_session=True,
                                   env=dict(os.environ, HF_TOKEN=_token))
             open(_pid_file, "w").write(str(_p.pid))
             _running = True
+        if _blocked and not _msg:
+            _msg = f"waiting (gated access not granted yet, or failed run): {', '.join(_blocked)}"
     run_all = {"running": _running, "todo": _todo}
     mo.md(f"**Runner ({BATCH}):** {'running' if _running else 'idle'} · remaining runs: {len(_todo)} / {len(RUNS)}"
           + (f"<br>⚠️ {_msg}" if _msg else ""))
     return
-
-
-@app.cell
-def refresh():
-    refresh = mo.ui.refresh(default_interval="30s", label="auto-refresh")
-    refresh
-    return (refresh,)
 
 
 @app.cell

@@ -8,7 +8,8 @@ Protocol (keeps results comparable to the dataset paper's DINOv3 baseline):
     (matched by file stem, verified by image size). Keypoint labels of
     classification val/test images are never used for training -> no leakage,
     even though the keypoint subset has its own, different split.
-  * 'Rejected' images have no keypoints -> keypoint loss is masked for them.
+  * 'Rejected' images: keypoint loss is masked (34 Rejected train images do have matching
+    keypoint labels, but they are deliberately ignored).
 
 Usage (Kaggle, internet on):
   python train_multitask.py --download --mode mt_geo --seeds 0 1 2
@@ -58,7 +59,7 @@ def build_index(root):
             for p in sorted(glob.glob(os.path.join(root, "classification", sp, c, "*"))):
                 stem = os.path.splitext(os.path.basename(p))[0]
                 k = None
-                if sp == "train" and stem in kp and stem in kp_img:   # kp only for cls-train
+                if sp == "train" and ci != 2 and stem in kp and stem in kp_img:   # kp only for cls-train, never Rejected
                     n_match += 1
                     if Image.open(p).size == Image.open(kp_img[stem]).size:
                         k = kp[stem]

@@ -9,7 +9,10 @@ Classification (Leaned / Straight / Rejected) + pole-axis keypoints (bottom, top
 - Keypoint labels are used **only for images in classification/train** (matched by file stem and
   verified by image size). The keypoint subset has its own, different split, so using its labels
   for classification val/test images would leak.
-- `Rejected` images have no keypoints: the keypoint loss is masked for them.
+- `Rejected` images: the keypoint loss is masked for them (34 Rejected train images do have matching
+  keypoint labels; they are deliberately ignored, so the geometry head only sees usable images).
+- Verified (pixel diff): same-stem images in the two subsets are the same photo (max diff ~0.14/255), so the
+  split mismatch is real leakage. 112 same-stem pairs differ in size (crops) and are dropped by the size check.
 - Augmentation: horizontal flip + color jitter only (rotation/shear would change the lean label).
 
 ## Modes
@@ -35,4 +38,4 @@ Baseline backbone in the dataset paper: `facebook/dinov3-vitb16-pretrain-lvd1689
 pass it via `--backbone`. Default here is `facebook/dinov2-base`.
 
 ## Status
-Script is syntax-checked but **not yet executed** (no torch in the authoring environment).
+CPU smoke test (tiny subset, all 3 modes, dinov2-base) passes end to end. Full GPU runs not done yet.

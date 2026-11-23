@@ -133,13 +133,16 @@ class MTNet(nn.Module):
 
 # ---------------------------------------------------------------- train / eval
 @torch.no_grad()
-def evaluate(model, dl, dev):
-    model.eval(); ys, ps = [], []
+def evaluate(model, dl, dev, full=False):
+    model.eval(); ys, ps, probs, kps = [], [], [], []
     for x, y, _, _ in dl:
         with torch.autocast("cuda", dtype=torch.float16, enabled=dev == "cuda"):
-            lg, _ = model(x.to(dev))
+            lg, kp = model(x.to(dev))
         ys += y.tolist(); ps += lg.argmax(-1).cpu().tolist()
-    return ys, ps
+        if full:
+            probs += lg.float().softmax(-1).cpu().numpy().round(5).tolist()
+            kps += kp.float().cpu().numpy().round(5).tolist()   # xb,yb,xt,yt normalised (unused head in cls mode)
+    return (ys, ps, probs, kps) if full else (ys, ps)
 
 
 def run(args, seed, idx):
@@ -157,7 +160,7 @@ def run(args, seed, idx):
     scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
     cnt = np.bincount([y for _, y, _ in idx["train"]], minlength=3)
     w = torch.tensor(cnt.sum() / (3 * cnt), dtype=torch.float32, device=dev)
-    best = (-1, None)
+    best, best_ep = (-1, None), -1
     for ep in range(args.epochs):
         model.train()
         for x, y, kp, m in tr:
@@ -174,14 +177,26 @@ def run(args, seed, idx):
         f1 = f1_score(ys, ps, average="macro")
         print(f"seed{seed} ep{ep} val acc {accuracy_score(ys, ps):.4f} macroF1 {f1:.4f}")
         if f1 > best[0]:
-            best = (f1, {k: v.detach().cpu().clone() for k, v in model.state_dict().items()})
+            best, best_ep = (f1, {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}), ep
     model.load_state_dict(best[1])
-    ys, ps = evaluate(model, te, dev)
-    res = {"seed": seed, "mode": args.mode, "val_macroF1": best[0], "test_acc": accuracy_score(ys, ps),
+    ys, ps, pr, kq = evaluate(model, te, dev, full=True)
+    vys, vps, vpr, vkq = evaluate(model, va, dev, full=True)
+    res = {"seed": seed, "mode": args.mode, "backbone": args.backbone, "best_epoch": best_ep,
+           "val_macroF1": best[0], "test_acc": accuracy_score(ys, ps),
            "test_macroF1": f1_score(ys, ps, average="macro"),
-           "y_true": ys, "y_pred": ps, "test_files": [os.path.basename(i[0]) for i in idx["test"]]}
+           "y_true": ys, "y_pred": ps, "test_files": [os.path.basename(i[0]) for i in idx["test"]],
+           "test_probs": pr, "test_kp": kq,
+           "val_y_true": vys, "val_y_pred": vps, "val_probs": vpr, "val_kp": vkq,
+           "val_files": [os.path.basename(i[0]) for i in idx["val"]], "args": vars(args)}
+    if args.ckpt_dir:
+        os.makedirs(args.ckpt_dir, exist_ok=True)
+        ck = os.path.join(args.ckpt_dir, f"{args.mode}_s{seed}.pt")
+        torch.save({"state_dict": {k: (v.half() if v.is_floating_point() else v) for k, v in best[1].items()},
+                    "args": vars(args), "seed": seed, "best_epoch": best_ep, "val_macroF1": best[0],
+                    "classes": CLASSES}, ck)
+        res["checkpoint"] = os.path.basename(ck)
     print(classification_report(ys, ps, target_names=CLASSES, digits=4))
-    print({k: v for k, v in res.items() if k not in ("y_true", "y_pred", "test_files")})
+    print({k: v for k, v in res.items() if not isinstance(v, (list, dict))})
     return res
 
 
@@ -200,6 +215,7 @@ if __name__ == "__main__":
     ap.add_argument("--seeds", type=int, nargs="+", default=[0])
     ap.add_argument("--out", default="results.json")
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--ckpt_dir", default=None, help="save best checkpoint (fp16) per run here")
     ap.add_argument("--data_dir", default="/kaggle/working/pd-defect", help="download target (--root should be <data_dir>/pole_lean_assessment)")
     a = ap.parse_args()
     if a.download:

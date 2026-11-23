@@ -51,27 +51,37 @@ def download():
 
 @app.cell
 def plan():
-    # ---- batch 2: second open backbone (DINOv2 with registers) + fixed geometry head
-    # batch 1 = results/b1_dinov2 (DINOv2-base: cls / mt / mt_geo). DINOv3 (dataset-card baseline) was not
-    # available to us (gated access refused), so the card number is cited, not reproduced.
-    BATCH = "b2_dinov2reg_geofix"
-    DINOV2_REG = "facebook/dinov2-with-registers-base"   # Apache-2.0, not gated
-    GATED = set()                                         # backbones that need gated HF access (none in this batch)
+    # ---- batch 3: equal-budget hyper-parameter search on the VALIDATION split (test is never evaluated)
+    # Paired random search: cls and mt get the SAME 8 draws of the shared hyper-parameters (trial 0 = the
+    # default used in batches 1-2); mt additionally gets lam (balanced: each of 1, 2, 5, 10 twice). 2 search seeds (100, 101), distinct from the
+    # final seeds 0-2. Best config per mode = highest mean val Macro-F1 -> re-trained in batch 4 and tested once.
+    BATCH = "b3_tune_dinov2"
+    GATED = set()
     CKPT_REPO = "northlattice/pd-defect-pole-lean-checkpoints"
-    EXPERIMENTS = {                                       # tag -> extra args (rest = script defaults: 15 ep, 448 px, bs 16)
-        "dinov2reg_cls": ["--mode", "cls", "--backbone", DINOV2_REG],
-        "dinov2reg_mt": ["--mode", "mt", "--backbone", DINOV2_REG],
-        "dinov2_mt_geo_d": ["--mode", "mt_geo_d"],         # detached geometry, no length feature
-    }
-    SEEDS = [0, 1, 2]
+    SAVE_CKPT = False                      # search runs: no checkpoints
+    N_TRIALS = 8
+    _rng = np.random.default_rng(2026)
+    _space = {"lr_bb": [1e-5, 2e-5, 3e-5, 5e-5], "lr_head": [3e-4, 1e-3, 3e-3], "epochs": [15, 25]}
+    TRIALS = [{"lr_bb": 2e-5, "lr_head": 1e-3, "epochs": 15}]
+    while len(TRIALS) < N_TRIALS:
+        _c = {k: _v[int(_rng.integers(len(_v)))] for k, _v in _space.items()}
+        if _c not in TRIALS:
+            TRIALS.append(_c)
+    LAMS = [5.0] + [float(x) for x in _rng.permutation([1.0, 1.0, 2.0, 2.0, 5.0, 10.0, 10.0])]   # each lam twice
+    EXPERIMENTS = {}
+    for _i, _c in enumerate(TRIALS):
+        _hp = [f"--{k}={v}" for k, v in _c.items()]
+        EXPERIMENTS[f"cls_t{_i:02d}"] = ["--mode", "cls", *_hp, "--no_test"]
+        EXPERIMENTS[f"mt_t{_i:02d}"] = ["--mode", "mt", *_hp, f"--lam={LAMS[_i]}", "--no_test"]
+    SEEDS = [100, 101]
     COMMON_ARGS = ["--workers", "12"]
     RUN_DIR = f"{RESULTS}/{BATCH}"
     CKPT_DIR = f"{WORK}/checkpoints/{BATCH}"
-    RUNS = [(t, s) for s in SEEDS for t in EXPERIMENTS]   # seed-major: partial results stay balanced
-    ANALYSIS_PAIRS = ["dinov2reg_cls:dinov2reg_mt", "cls:dinov2reg_cls", "mt:dinov2reg_mt",
-                      "mt:dinov2_mt_geo_d", "mt_geo:dinov2_mt_geo_d"]
+    RUNS = [(t, s) for s in SEEDS for t in EXPERIMENTS]   # seed-major: an interrupted search still has 1 seed/trial
+    ANALYSIS_CMD = ["tune_summary.py", "--results", RUN_DIR, "--out", f"{RUN_DIR}/best_configs.json"]
+
     return (
-        ANALYSIS_PAIRS,
+        ANALYSIS_CMD,
         BATCH,
         CKPT_DIR,
         CKPT_REPO,
@@ -80,6 +90,7 @@ def plan():
         GATED,
         RUNS,
         RUN_DIR,
+        SAVE_CKPT,
     )
 
 
@@ -108,6 +119,7 @@ def launch(
     GATED,
     RUNS,
     RUN_DIR,
+    SAVE_CKPT,
     hf_token,
     n_images,
     refresh,
@@ -154,7 +166,7 @@ def launch(
             os.makedirs(CKPT_DIR, exist_ok=True)
             _cmd = " ; ".join(
                 f"{sys.executable} -u {SCRIPT} --root {ROOT} --tag {t} --seeds {s} "
-                f"{' '.join(EXPERIMENTS[t] + COMMON_ARGS)} --ckpt_dir {CKPT_DIR} "
+                f"{' '.join(EXPERIMENTS[t] + COMMON_ARGS + (['--ckpt_dir', CKPT_DIR] if SAVE_CKPT else []))} "
                 f"--out {RUN_DIR}/res_{t}_s{s}.json > {RUN_DIR}/log_{t}_s{s}.txt 2>&1"
                 for t, s in _ready)
             _p = subprocess.Popen(["bash", "-c", _cmd], cwd=WORK, start_new_session=True,
@@ -175,11 +187,12 @@ def status(BATCH, RUNS, RUN_DIR, refresh):
     _rows = []
     for _t, _s in RUNS:
         _res, _log = f"{RUN_DIR}/res_{_t}_s{_s}.json", f"{RUN_DIR}/log_{_t}_s{_s}.txt"
-        _row = {"experiment": _t, "seed": _s, "state": "pending", "last epoch": "", "test acc": "", "test macroF1": ""}
+        _row = {"experiment": _t, "seed": _s, "state": "pending", "last epoch": "", "val macroF1": "", "test acc": "", "test macroF1": ""}
         if os.path.exists(_res):
             _r = json.load(open(_res))[0]
-            _row.update(state="done", **{"test acc": round(100 * _r["test_acc"], 2),
-                                         "test macroF1": round(100 * _r["test_macroF1"], 2)})
+            _row.update(state="done", **{"val macroF1": round(100 * _r["val_macroF1"], 2)})
+            if "test_acc" in _r:
+                _row.update(**{"test acc": round(100 * _r["test_acc"], 2), "test macroF1": round(100 * _r["test_macroF1"], 2)})
         if os.path.exists(_log):
             _txt = open(_log).read()
             _ep = re.findall(r"ep(\d+) val acc ([\d.]+) macroF1 ([\d.]+)", _txt)
@@ -219,17 +232,15 @@ def upload(BATCH, CKPT_DIR, CKPT_REPO, RUNS, RUN_DIR, hf_token, refresh):
 
 
 @app.cell
-def analysis(ANALYSIS_PAIRS, BATCH, RUNS, RUN_DIR, refresh):
+def analysis(ANALYSIS_CMD, BATCH, RUNS, RUN_DIR, refresh):
     refresh.value
     _out = f"{RUN_DIR}/analysis.txt"
     _n_done = len(glob.glob(f"{RUN_DIR}/res_*.json"))
     if _n_done == len(RUNS) and not os.path.exists(_out):
-        _r = subprocess.run([sys.executable, f"{WORK}/analyze_results.py", "--results", f"{RESULTS}/b1_dinov2", RUN_DIR,
-                             "--n_boot", "10000", "--out", f"{RUN_DIR}/analysis.json", "--pairs", *ANALYSIS_PAIRS],
-                            capture_output=True, text=True)
+        _r = subprocess.run([sys.executable, f"{WORK}/{ANALYSIS_CMD[0]}", *ANALYSIS_CMD[1:]], capture_output=True, text=True)
         open(_out, "w").write(_r.stdout + _r.stderr)
     analysis_text = open(_out).read() if os.path.exists(_out) else None
-    mo.md(f"## Statistical analysis · {BATCH} (vs batch 1)\n" + (f"```\n{analysis_text}\n```" if analysis_text
+    mo.md(f"## Analysis · {BATCH}\n" + (f"```\n{analysis_text}\n```" if analysis_text
           else f"_Waiting for all runs: {_n_done} / {len(RUNS)} done._"))
     return
 

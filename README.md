@@ -229,7 +229,8 @@ near-threshold images. Soft targets that encode the measured angle should reduce
 - *Secondary outcomes:*
   - test error rate in the 2–6° GT-angle band. Only 37 test images fall in this band, so this has low power and is
     descriptive;
-  - calibration on test: NLL and ECE (15 equal-width bins), seed-averaged.
+  - calibration on test: NLL and ECE (15 equal-width bins), seed-averaged
+    ([`tools/analysis/h2_soft.py`](tools/analysis/h2_soft.py), written before any H2 result was seen).
 - *Prediction:* Macro-F1 increases, errors in the 2–6° band decrease, and NLL / ECE decrease.
 - *Expected limitation:* the test labels share the same ≈ 3° ambiguity, so the attainable gain in accuracy is
   bounded. The GT-angle rule reaches 91.6% Leaned-vs-Straight accuracy on test, and the classifiers reach ≈ 90%.

@@ -1,3 +1,5 @@
 dinov2_tuned_cls   Rejected F1 80.4 +- 0.9 (P 83.6, R 77.5) | false-Rejected: low-light L/S 7.6% (n=48), other L/S 1.4% | 4 named dusk images predicted Rejected: 83%
 dinov2_tuned_mt    Rejected F1 81.4 +- 2.1 (P 77.2, R 86.5) | false-Rejected: low-light L/S 10.4% (n=48), other L/S 3.3% | 4 named dusk images predicted Rejected: 75%
+dinov2_photo_cls   Rejected F1 79.0 +- 1.0 (P 79.4, R 79.3) | false-Rejected: low-light L/S 7.6% (n=48), other L/S 3.1% | 4 named dusk images predicted Rejected: 67%
+dinov2_photo_mt    Rejected F1 78.9 +- 0.5 (P 79.4, R 79.3) | false-Rejected: low-light L/S 8.3% (n=48), other L/S 2.8% | 4 named dusk images predicted Rejected: 67%
 (low-light threshold = 25th percentile of test mean grey = 115.3)

@@ -13,3 +13,23 @@ seed0 ep5 val acc 0.8358 macroF1 0.8134
 seed0 ep6 val acc 0.8680 macroF1 0.8501
 seed0 ep7 val acc 0.8416 macroF1 0.8123
 seed0 ep8 val acc 0.8739 macroF1 0.8532
+seed0 ep9 val acc 0.8563 macroF1 0.8350
+seed0 ep10 val acc 0.8622 macroF1 0.8323
+seed0 ep11 val acc 0.8622 macroF1 0.8337
+seed0 ep12 val acc 0.8592 macroF1 0.8344
+seed0 ep13 val acc 0.8651 macroF1 0.8413
+seed0 ep14 val acc 0.8651 macroF1 0.8413
+              precision    recall  f1-score   support
+
+      Leaned     0.8333    0.7258    0.7759        62
+    Straight     0.9062    0.9062    0.9062       128
+    Rejected     0.7111    0.8649    0.7805        37
+
+    accuracy                         0.8502       227
+   macro avg     0.8169    0.8323    0.8209       227
+weighted avg     0.8545    0.8502    0.8501       227
+
+{'seed': 0, 'mode': 'cls', 'tag': 'dinov2_photo_cls', 'backbone': 'facebook/dinov2-base', 'best_epoch': 8, 'val_macroF1': 0.8531809120044413, 'val_acc': 0.873900293255132, 'test_acc': 0.8502202643171806, 'test_macroF1': 0.8208666246145221, 'checkpoint': 'dinov2_photo_cls_s0.pt'}
+val_macroF1 0.8532 +- 0.0000
+test_acc 0.8502 +- 0.0000
+test_macroF1 0.8209 +- 0.0000

@@ -135,6 +135,27 @@ Same search as above (same 8 configurations, same λ draws, same search seeds), 
 - Output: [`b3b_tune_dinov2reg/analysis.txt`](results/marimo/b3b_tune_dinov2reg/analysis.txt),
   [`best_configs.json`](results/marimo/b3b_tune_dinov2reg/best_configs.json).
 
+## Diagnostic analysis (phase 1, no training)
+
+Script: [`tools/analysis/phase1_angle_analysis.py`](tools/analysis/phase1_angle_analysis.py); output:
+[`results/analysis/phase1/phase1.txt`](results/analysis/phase1/phase1.txt). GT keypoints of val/test images
+are used here **for evaluation only**.
+
+- **The binary lean label follows an implicit ≈ 3° threshold, not 10°.** On train, a single threshold on the
+  GT axis angle (3.03°, fitted on train) reproduces the Leaned/Straight labels with 90.9% accuracy, and
+  91.6% on test. The "angle > 10°" rule used in prior work reaches only 77.6% on test, even with GT keypoints.
+  No Straight pole has a GT angle above 10°, while 16.8% of Leaned train poles are below 3°.
+- **Remaining errors sit in the ambiguous 2–6° band.** 27 of the 143 Leaned/Straight test images with GT
+  keypoints lie in 2–6°, where every model errs on 10–37% of images; outside this band errors are rare.
+- **The classifiers are close to the label-consistency ceiling on Leaned vs Straight** (tuned DINOv2 `mt`:
+  90.4% vs 91.6% for the GT-angle oracle rule). The headroom for higher Macro-F1 is mainly in `Rejected`
+  (recall 77–87%) and in the 2–6° band.
+- **The `mt` keypoint head is accurate**: angle MAE 0.97° (median 0.63°), correlation 0.95 with the GT angle
+  (tuned DINOv2). A rule on the predicted angle with a validation-selected threshold (≈ 3.2°) gives hybrid
+  Macro-F1 81.9 (classifier decides `Rejected`), and 68.5 with the 10° rule; both are below the classifier (84.7).
+- Tuned DINOv2 `mt` vs `cls` (test, summed over seeds): recall Leaned 79.6 vs 74.7, Rejected 86.5 vs 77.5,
+  Straight 90.6 vs 94.5.
+
 ## Data protocol
 
 - **Only the official classification split** is used: train 1706 / val 341 / test 227

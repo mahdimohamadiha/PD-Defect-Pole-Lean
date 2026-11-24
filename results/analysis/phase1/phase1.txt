@@ -1,0 +1,44 @@
+== A. Label consistency: GT axis angle vs binary lean label (Leaned/Straight images with GT keypoints)
+ train: 1149/1426 L/S images with GT kp | median angle Leaned 6.1 deg, Straight 1.0 deg | Leaned<3deg 16.8%, Straight>10deg 0.0%
+        rule 'GT angle > 10 deg': acc 75.8% | best threshold 3.03 deg: acc 90.9%
+ val  : 231/284 L/S images with GT kp | median angle Leaned 6.2 deg, Straight 1.1 deg | Leaned<3deg 11.0%, Straight>10deg 0.0%
+        rule 'GT angle > 10 deg': acc 80.1% | best threshold 3.04 deg: acc 93.1%  (oracle, fitted on this split)
+ test : 143/190 L/S images with GT kp | median angle Leaned 5.9 deg, Straight 1.1 deg | Leaned<3deg 17.8%, Straight>10deg 0.0%
+        rule 'GT angle > 10 deg': acc 77.6% | best threshold 2.46 deg: acc 93.7%  (oracle, fitted on this split)
+ train histogram (angle bin: #Leaned / #Straight): 0-2: 19/639, 2-4: 91/103, 4-6: 85/13, 6-10: 83/2, 10-15: 47/0, 15-90: 67/0
+ val: GT-angle rule with the train-fitted threshold (3.03 deg): acc 93.1%
+ test: GT-angle rule with the train-fitted threshold (3.03 deg): acc 91.6%
+
+== B. Keypoint quality on test (mt models; images with GT keypoints, Leaned/Straight)
+== C. Rule baselines from predicted keypoints
+ dinov2_tuned_mt: angle MAE 0.97 deg (median 0.63), corr(pred, GT) 0.953, n=143
+   classifier          : Macro-F1 84.72 +- 2.29, Leaned-vs-Straight acc on non-Rejected 90.35
+   rule angle > 10 deg                        : hybrid Macro-F1 68.54 +- 1.61, L-vs-S acc 76.14
+   rule angle > t_val (t_val = 3.16 +- 0.32)  : hybrid Macro-F1 81.86 +- 3.26, L-vs-S acc 86.49
+ dinov2reg_tuned_mt: angle MAE 1.40 deg (median 0.73), corr(pred, GT) 0.914, n=143
+   classifier          : Macro-F1 79.97 +- 0.97, Leaned-vs-Straight acc on non-Rejected 87.72
+   rule angle > 10 deg                        : hybrid Macro-F1 66.08 +- 2.33, L-vs-S acc 75.79
+   rule angle > t_val (t_val = 3.15 +- 0.45)  : hybrid Macro-F1 76.84 +- 2.83, L-vs-S acc 83.68
+ dinov2reg_mt: angle MAE 1.22 deg (median 0.69), corr(pred, GT) 0.927, n=143
+   classifier          : Macro-F1 78.66 +- 0.99, Leaned-vs-Straight acc on non-Rejected 85.79
+   rule angle > 10 deg                        : hybrid Macro-F1 66.18 +- 1.08, L-vs-S acc 76.32
+   rule angle > t_val (t_val = 3.31 +- 0.46)  : hybrid Macro-F1 78.05 +- 0.56, L-vs-S acc 85.61
+
+== D. Test error rate by GT axis angle bin (Leaned/Straight test images with GT keypoints; mean over seeds)
+ bins (deg)      :       0-2 |       2-4 |       4-6 |      6-10 |     10-15 |     15-90
+ n Leaned/Straight:    1/83   |   14/13   |    8/2    |    9/0    |    7/0    |    6/0   
+ dinov2_tuned_cls    :      4.8% |     28.4% |     20.0% |      7.4% |      0.0% |      0.0%
+ dinov2_tuned_mt     :      8.3% |     22.2% |     20.0% |      0.0% |      4.8% |      0.0%
+ dinov2reg_tuned_cls :     10.3% |     23.5% |     10.0% |      3.7% |      9.5% |      0.0%
+ dinov2reg_tuned_mt  :      7.5% |     25.9% |     33.3% |      0.0% |      9.5% |      0.0%
+ cls                 :      8.7% |     30.9% |     26.7% |      0.0% |     14.3% |      0.0%
+ mt                  :      7.1% |     22.2% |     20.0% |      0.0% |      9.5% |      0.0%
+ dinov2reg_cls       :      9.5% |     22.2% |     13.3% |      0.0% |      4.8% |      0.0%
+ dinov2reg_mt        :      9.5% |     29.6% |     36.7% |     14.8% |      9.5% |      0.0%
+ (test Leaned/Straight images without GT keypoints: 47; these are not in the table)
+
+== E. Test confusion matrices, summed over seeds (rows = true L/S/R, cols = predicted L/S/R)
+ dinov2_tuned_cls    :  139   39    8 |   12  363    9 |   16    9   86   recall L/S/R: 74.7/94.5/77.5
+ dinov2_tuned_mt     :  148   28   10 |   17  348   19 |   12    3   96   recall L/S/R: 79.6/90.6/86.5
+ dinov2reg_tuned_cls :  146   30   10 |   27  339   18 |   16    8   87   recall L/S/R: 78.5/88.3/78.4
+ dinov2reg_tuned_mt  :  141   36    9 |   25  346   13 |   21   10   80   recall L/S/R: 75.8/90.1/72.1

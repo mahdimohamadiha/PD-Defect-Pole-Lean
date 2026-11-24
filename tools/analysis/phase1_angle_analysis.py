@@ -212,6 +212,19 @@ def main():
     n_nokp = sum(1 for (s, f), v in gt.items() if s == "test" and v["label"] != 2 and v["angle"] is None)
     P(f" (test Leaned/Straight images without GT keypoints: {n_nokp}; these are not in the table)")
 
+    # ---------------- E. confusion matrices (summed over seeds)
+    P("\n== E. Test confusion matrices, summed over seeds (rows = true L/S/R, cols = predicted L/S/R)")
+    rep["E"] = {}
+    for batch, tags in TUNED.items():
+        for tag in tags:
+            Cm = np.zeros((3, 3), int)
+            for r in load_runs(a.results, batch, tag):
+                for t_, p_ in zip(r["y_true"], r["y_pred"]):
+                    Cm[t_, p_] += 1
+            rep["E"][tag] = Cm.tolist()
+            P(f" {tag:20s}: " + " | ".join(" ".join(f"{v:4d}" for v in row) for row in Cm)
+              + f"   recall L/S/R: " + "/".join(f"{100*Cm[i,i]/Cm[i].sum():.1f}" for i in range(3)))
+
     json.dump(rep, open(os.path.join(a.out, "phase1.json"), "w"), indent=1)
     open(os.path.join(a.out, "phase1.txt"), "w").write("\n".join(L) + "\n")
     print("saved", a.out)

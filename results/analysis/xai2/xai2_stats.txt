@@ -1,0 +1,42 @@
+== X2: 143 Leaned/Straight test images with a GT pole box; 137 with 5 random control boxes
+
+-- per model (mean over images of the seed-averaged value)
+model                   reliance drop pole drop rand flip pole flip rand    acc acc ctx
+dinov2_soft_cls            1.643     1.814     0.004     52.0%      2.1%  91.4%   47.3%
+dinov2_soft_mt             1.713     1.875     0.011     51.7%      2.4%  89.7%   49.4%
+dinov2_tuned_cls           1.871     2.097     0.022     49.2%      1.8%  90.0%   49.9%
+dinov2_tuned_mt            2.013     2.223     0.042     49.4%      3.2%  89.3%   43.8%
+dinov2reg_tuned_cls        2.255     2.505     0.024     49.4%      2.1%  88.1%   53.4%
+dinov2reg_tuned_mt         2.584     2.900     0.016     45.9%      1.8%  87.9%   55.0%
+
+-- PRIMARY: pole reliance, mt - cls (Holm over 2)
+   dinov2_tuned_mt - dinov2_tuned_cls: +0.142 CI95 [-0.036, +0.320]  Wilcoxon p=0.3152  Holm p=0.3152  (n=137)
+   dinov2reg_tuned_mt - dinov2reg_tuned_cls: +0.329 CI95 [+0.078, +0.576]  Wilcoxon p=0.0027  Holm p=0.0053  (n=137)
+
+-- SECONDARY: pole reliance (two-sided, Holm over 4)
+   dinov2_soft_cls - dinov2_tuned_cls: -0.228 CI95 [-0.415, -0.044]  Wilcoxon p=0.0348  Holm p=0.0836
+   dinov2_soft_mt - dinov2_tuned_mt: -0.300 CI95 [-0.491, -0.110]  Wilcoxon p=0.0004  Holm p=0.0018
+   dinov2reg_tuned_cls - dinov2_tuned_cls: +0.384 CI95 [+0.127, +0.670]  Wilcoxon p=0.1925  Holm p=0.1925
+   dinov2reg_tuned_mt - dinov2_tuned_mt: +0.571 CI95 [+0.260, +0.892]  Wilcoxon p=0.0279  Holm p=0.0836
+
+-- attribution methods: energy-in-box and deletion faithfulness (area over the log-prob curve; higher = more faithful)
+model                       box_att  box_rollout   box_chefer  box_gradcam |      aoc_att  aoc_rollout   aoc_chefer  aoc_gradcam   aoc_random
+dinov2_soft_cls               41.9%        10.4%        36.3%         8.1% |        4.053        2.285        5.139        0.377        0.216
+dinov2_soft_mt                41.3%        10.7%        37.5%         8.4% |        4.836        3.087        5.760        0.618        0.293
+dinov2_tuned_cls              41.1%        10.5%        34.8%         9.8% |        4.339        2.430        5.181        0.584        0.282
+dinov2_tuned_mt               37.7%        10.6%        35.8%         8.3% |        4.789        3.050        5.816        0.660        0.334
+dinov2reg_tuned_cls           54.9%        10.8%        46.3%        10.9% |        5.304        2.510        6.453        0.600        0.265
+dinov2reg_tuned_mt            54.7%        10.9%        48.6%        10.9% |        6.239        2.848        8.010        0.494        0.193
+
+-- faithfulness, method - random order (all models and seeds pooled per image; paired over images)
+   att     : +4.663 CI95 [+4.352, +4.974]  Wilcoxon p=3.319e-25
+   rollout : +2.438 CI95 [+2.153, +2.734]  Wilcoxon p=3.319e-25
+   chefer  : +5.796 CI95 [+5.499, +6.082]  Wilcoxon p=3.319e-25
+   gradcam : +0.292 CI95 [+0.216, +0.371]  Wilcoxon p=9.324e-14
+   most faithful (largest mean gain over random): chefer
+
+-- sanity check (head + last 4 blocks re-initialised; Spearman original vs randomised map, median over images; high = insensitive to the model)
+   att     : +0.032
+   rollout : +0.959
+   chefer  : +0.704
+   gradcam : +0.080

@@ -9,7 +9,7 @@ regresses the pole axis (bottom and top keypoints).
 > final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers), as are the diagnostic analyses and
 > the pre-registered follow-ups: H1 (photometric augmentation) and H3 (data efficiency) are null; H2 (GT-angle soft
 > labels) improves calibration, but the H2b controls show that this comes from target smoothing, not from the
-> angle. The explainability test (X1) finds that both models attend to the pole, but keypoint supervision does not make attention more pole-focused. Next:
+> angle. The explainability test (X1) finds that both models attend to the pole, but keypoint supervision does not make attention more pole-focused. The perturbation test (X2) shows that all models depend causally on the pole and partly on its context. Next:
 > the paper.
 
 ## Headline: tuned models (final)
@@ -395,6 +395,39 @@ faithfulness is measured instead of assumed. Script: [`tools/analysis/xai2.py`](
 - *Figure rule:* the explanation figure uses the attribution method with the best deletion faithfulness, the same
   4 random images as X1, and the models DINOv2 `cls`, DINOv2 `mt` and DINOv2-reg `cls`. Grad-CAM is reported in
   the tables and the text only.
+- **Result: partly supported. All models depend strongly on the pole; keypoint supervision increases this
+  dependence on DINOv2-reg but not significantly on DINOv2.** 143 images (137 with 5 control boxes), mean over
+  seeds 0–2 ([`xai2_stats.txt`](results/analysis/xai2/xai2_stats.txt), per-image rows in
+  [`results/marimo/x2_xai/`](results/marimo/x2_xai)):
+
+  | model | pole reliance | flip, pole blurred | flip, random box blurred | accuracy, intact | accuracy, pole only |
+  |---|---|---|---|---|---|
+  | DINOv2 `cls` | 1.87 | 49.2% | 1.8% | 90.0% | 49.9% |
+  | DINOv2 `mt` | 2.01 | 49.4% | 3.2% | 89.3% | 43.8% |
+  | DINOv2 soft `cls` | 1.64 | 52.0% | 2.1% | 91.4% | 47.3% |
+  | DINOv2 soft `mt` | 1.71 | 51.7% | 2.4% | 89.7% | 49.4% |
+  | DINOv2-reg `cls` | 2.26 | 49.4% | 2.1% | 88.1% | 53.4% |
+  | DINOv2-reg `mt` | 2.58 | 45.9% | 1.8% | 87.9% | 55.0% |
+
+  Pole reliance is the drop in log-probability of the predicted class when the pole box is blurred, minus the
+  drop for random boxes of the same size. Accuracy is on these 143 Leaned/Straight images.
+  - *Primary* (paired over 137 images, Holm over 2):
+    - DINOv2 `mt` − `cls`: +0.14 [−0.04, +0.32], Wilcoxon p = 0.32, which is not significant;
+    - DINOv2-reg `mt` − `cls`: +0.33 [+0.08, +0.58], p = 0.003 (Holm 0.005).
+  - *Secondary* (Holm over 4):
+    - soft − hard: `cls` −0.23 [−0.42, −0.04] (Holm 0.08), `mt` −0.30 [−0.49, −0.11] (Holm 0.002). Soft targets
+      *reduce* the dependence on the pole;
+    - DINOv2-reg − DINOv2: `cls` +0.38 [+0.13, +0.67] (Holm 0.19), `mt` +0.57 [+0.26, +0.89] (Holm 0.08).
+  - Blurring the pole flips about half of the predictions, while blurring a random region of the same size flips
+    2–3%. The decision therefore depends causally on the pole region. Keeping *only* the pole (everything else
+    blurred) drops accuracy from about 89% to 44–55%, so the context is needed as well. A plausible reason is
+    that the surroundings supply a vertical reference, but heavy blurring is also a distribution shift.
+  - Attribution methods: deletion faithfulness (area over the log-prob curve, gain over a random order, all
+    models pooled) is Chefer +5.80 > CLS attention +4.66 > rollout +2.44 > Grad-CAM +0.29. In the sanity check
+    (median Spearman between the original map and the map after re-initialising the head and the last 4 blocks;
+    high = insensitive), attention (0.03) and Grad-CAM (0.08) pass, Chefer is partly insensitive (0.70), and
+    rollout fails (0.96). CLS attention is thus both faithful and model-sensitive. Following the figure rule, the
+    figure uses Chefer.
 
 ## Data protocol
 

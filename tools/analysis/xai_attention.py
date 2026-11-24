@@ -54,7 +54,7 @@ def box_mask(box, g):
 
 
 def explain(model, x):
-    """returns (pred, gradcam [g,g], cls_attn [g,g] or None)"""
+    """returns (pred, gradcam [g,g], cls_attn [g,g] or None, artifact mask [g,g])"""
     bb = model.bb
     out = bb(pixel_values=x, output_hidden_states=True, output_attentions=True)
     hs = out.hidden_states
@@ -71,10 +71,12 @@ def explain(model, x):
     lg[0, pred].backward()
     g = int(round(n ** 0.5))
     cam = torch.relu((h_in.grad[0, -n:] * h_in[0, -n:]).sum(-1)).detach().float().cpu().numpy().reshape(g, g)
+    nrm = h[0, -n:].norm(dim=-1).detach().float().cpu().numpy()
+    art = (nrm > 3 * np.median(nrm)).reshape(g, g)   # high-norm "artifact" tokens (Darcet et al., 2024)
     att = None
     if out.attentions is not None and out.attentions[-1] is not None:
         att = out.attentions[-1][0, :, 0, -n:].mean(0).detach().float().cpu().numpy().reshape(g, g)
-    return pred, cam, att
+    return pred, cam, att, art
 
 
 def metrics(m, box):
@@ -117,20 +119,23 @@ def main():
                     y, bx = boxes[p]
                     im = Image.open(p).convert("RGB").resize((ar["size"], ar["size"]), Image.BICUBIC)
                     x = torch.tensor(((np.asarray(im) / 255.0 - MEAN) / STD).transpose(2, 0, 1), dtype=torch.float32)[None].to(dev)
-                    pred, cam, att = explain(model, x)
+                    pred, cam, att, art = explain(model, x)
                     bm = box_mask(bx, cam.shape[0])
                     e_cam, hit_cam = metrics(cam, bm)
                     e_att, hit_att = metrics(att, bm) if att is not None else (np.nan, np.nan)
                     rows.append({"tag": tag, "seed": seed, "file": os.path.basename(p), "y": y, "pred": pred,
                                  "box_area": float(bm.mean()), "cam_in_box": e_cam, "cam_hit": hit_cam,
-                                 "att_in_box": e_att, "att_hit": hit_att})
+                                 "att_in_box": e_att, "att_hit": hit_att, "n_art": int(art.sum()),
+                                 "cam_in_box_noart": metrics(cam * ~art, bm)[0],
+                                 "att_in_box_noart": metrics(att * ~art, bm)[0] if att is not None else np.nan})
                     if f"{tag}_s{seed}" in a.maps_for:
                         maps.setdefault(f"{tag}_s{seed}", {})[os.path.basename(p)] = {
                             "cam": np.round(cam / (cam.max() + 1e-12), 3).tolist(),
-                            "att": None if att is None else np.round(att / (att.max() + 1e-12), 3).tolist()}
+                            "att": None if att is None else np.round(att / (att.max() + 1e-12), 3).tolist(),
+                            "art": art.astype(int).tolist()}
                 r = [x for x in rows if x["tag"] == tag and x["seed"] == seed]
                 print(f"{tag} s{seed}: cam_in_box {np.nanmean([x['cam_in_box'] for x in r]):.3f} "
-                      f"att_in_box {np.nanmean([x['att_in_box'] for x in r]):.3f} box_area {np.mean([x['box_area'] for x in r]):.3f}", flush=True)
+                      f"att_in_box {np.nanmean([x['att_in_box'] for x in r]):.3f} n_art {np.mean([x['n_art'] for x in r]):.1f} box_area {np.mean([x['box_area'] for x in r]):.3f}", flush=True)
                 del model; torch.cuda.empty_cache()
     json.dump(rows, open(os.path.join(a.out, "xai_rows.json"), "w"))
     json.dump(maps, open(os.path.join(a.out, "xai_maps.json"), "w"))

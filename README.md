@@ -297,6 +297,10 @@ any map was inspected).
   images drawn at random (rng 0). No hand-picked examples.
 - *Caveat:* saliency shows correlation, not causation. A higher energy-in-box does not prove that the decision
   is made for the right reason.
+- *Amendment, made before the full run:* a sanity check of the code on 4 images (maps only, no model
+  comparison) showed a hot spot on a few high-norm background tokens. This is the known ViT "artifact token"
+  effect (Darcet et al., 2024). A robustness variant is therefore added, which excludes tokens whose last-layer
+  norm is more than 3× the median. The primary metric is unchanged.
 
 ## Data protocol
 

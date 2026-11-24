@@ -1,0 +1,41 @@
+test images: 227 | bootstrap resamples: 10000
+
+== 1-2. per mode (mean +- std over seeds; 95% bootstrap CI of the seed-averaged metric)
+dinov2_tuned_cls seeds=[0, 1, 2]
+   acc      86.34 +- 0.76  CI95 [82.23, 90.16]  card baseline 84.14 inside CI
+   macroF1  83.50 +- 0.67  CI95 [78.09, 88.17]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 78.78, 'Straight': 91.32, 'Rejected': 80.39} | majority vote: {'acc': 86.78, 'macroF1': 83.3}
+dinov2_tuned_mt seeds=[0, 1, 2]
+   acc      86.93 +- 2.17  CI95 [82.97, 90.75]  card baseline 84.14 inside CI
+   macroF1  84.72 +- 2.29  CI95 [79.66, 89.11]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 81.54, 'Straight': 91.21, 'Rejected': 81.42} | majority vote: {'acc': 89.43, 'macroF1': 87.37}
+dinov2_photo_cls seeds=[0, 1, 2]
+   acc      86.20 +- 1.67  CI95 [82.38, 89.87]  card baseline 84.14 inside CI
+   macroF1  83.47 +- 1.72  CI95 [78.39, 87.80]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 80.38, 'Straight': 91.04, 'Rejected': 78.97} | majority vote: {'acc': 87.67, 'macroF1': 85.3}
+dinov2_photo_mt seeds=[0, 1, 2]
+   acc      86.05 +- 1.42  CI95 [82.23, 89.72]  card baseline 84.14 inside CI
+   macroF1  83.42 +- 1.22  CI95 [78.43, 87.71]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 80.68, 'Straight': 90.65, 'Rejected': 78.93} | majority vote: {'acc': 86.78, 'macroF1': 84.46}
+
+== 2-3. pairwise: bootstrap CI of the difference (B - A) + exact McNemar
+dinov2_photo_cls vs dinov2_tuned_cls:
+   dacc      -0.15  CI95 [-2.64, +2.35]  P(diff<=0)=0.560
+   dmacroF1  -0.03  CI95 [-3.03, +3.03]  P(diff<=0)=0.507
+   McNemar per seed  s0: b=10 c=8 p=0.815, s1: b=8 c=10 p=0.815, s2: b=11 c=10 p=1.000
+   McNemar maj.vote  b=6 c=8 p=0.7905  Holm-adj p=1.0000
+   (b = A right & B wrong, c = A wrong & B right)
+dinov2_photo_mt vs dinov2_tuned_mt:
+   dacc      -0.88  CI95 [-3.23, +1.47]  P(diff<=0)=0.785
+   dmacroF1  -1.30  CI95 [-4.12, +1.53]  P(diff<=0)=0.830
+   McNemar per seed  s0: b=12 c=12 p=1.000, s1: b=11 c=15 p=0.557, s2: b=16 c=6 p=0.052
+   McNemar maj.vote  b=11 c=5 p=0.2101  Holm-adj p=0.6303
+   (b = A right & B wrong, c = A wrong & B right)
+dinov2_photo_mt vs dinov2_photo_cls:
+   dacc      -0.15  CI95 [-2.06, +1.91]  P(diff<=0)=0.585
+   dmacroF1  -0.04  CI95 [-2.24, +2.16]  P(diff<=0)=0.518
+   McNemar per seed  s0: b=10 c=11 p=1.000, s1: b=9 c=8 p=1.000, s2: b=11 c=10 p=1.000
+   McNemar maj.vote  b=7 c=5 p=0.7744  Holm-adj p=1.0000
+   (b = A right & B wrong, c = A wrong & B right)
+
+saved /marimo/results/b5_h1_photo_dinov2/analysis.json

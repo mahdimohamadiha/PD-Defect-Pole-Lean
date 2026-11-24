@@ -1,0 +1,18 @@
+Leakage re-check (2026-11-24), content-based (32x32 grey thumbnails, aspect-free, mean abs diff in /255),
+independent of file names. Script: tools/analysis/leak_content_check.py (run from <pole_lean_assessment>).
+
+1. Classification split vs keypoint-TRAIN split
+   cls test: 125 share a file stem with a kp-train image.
+     113 are near-identical in content (thumb diff < 3), all with the same name (no renamed duplicates found).
+     12 are the same scene but geometrically different (re-cropped / slightly rotated or sheared copies; see
+     same_name_not_identical_examples.jpg, left = cls test, right = kp train).
+   cls val: 189 share a stem with kp-train; 180 near-identical, 9 transformed copies.
+   => using the keypoint split as-is (e.g. pre-training the keypoint head on kp-train) would leak test photos.
+      Our protocol uses keypoints only for cls-train images (stem + size match), so no leak in our models.
+
+2. Within the classification split (cls test/val vs cls train), thumb diff < 8:
+   test/Straight/1139.jpg <-> train/Straight/464.jpg   0.0 (exact duplicate, same label)
+   test/Rejected/1528.jpg <-> train/Rejected/1539.jpg  2.0 (near-duplicate, same label)
+   test/Leaned/1978.jpg   <-> train/Straight/1987.jpg  5.3 (consecutive shot, CONFLICTING label)
+   val: 2305<->2269 (0.1), 13<->590 (3.1), 1600<->1599 (3.8), 1986<->1985 (6.3), all same label.
+   => 2-3 of 227 test images (about 1%): negligible for the reported results, but worth a footnote.

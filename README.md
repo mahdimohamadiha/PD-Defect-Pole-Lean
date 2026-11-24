@@ -284,6 +284,10 @@ in H2.
     difference 0.14/255). The other 112 are re-cropped versions with a different size.
   - **125 test and 189 val classification images appear in the keypoint *train* split.** Using the
     keypoint split as-is would leak.
+- A content-based re-check (thumbnails, independent of file names) confirms this: 113 of the 125 test images are
+  near-identical to a keypoint-train image, and the other 12 are re-cropped or slightly rotated copies of the same
+  photo. The official classification split itself has only 2–3 near-duplicates between test and train (≈ 1%).
+  See [`results/analysis/leakage/`](results/analysis/leakage/leakage_recheck.txt).
 - Keypoint labels are therefore used **only for classification-train images**, matched by stem *and*
   image size. Cropped copies are dropped, because normalised coordinates would not transfer to them.
   This leaves 1,149 train images with keypoints.

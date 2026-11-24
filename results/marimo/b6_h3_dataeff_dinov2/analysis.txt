@@ -1,0 +1,63 @@
+test images: 227 | bootstrap resamples: 10000
+
+== 1-2. per mode (mean +- std over seeds; 95% bootstrap CI of the seed-averaged metric)
+dinov2_tuned_cls seeds=[0, 1, 2]
+   acc      86.34 +- 0.76  CI95 [82.23, 90.16]  card baseline 84.14 inside CI
+   macroF1  83.50 +- 0.67  CI95 [78.09, 88.17]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 78.78, 'Straight': 91.32, 'Rejected': 80.39} | majority vote: {'acc': 86.78, 'macroF1': 83.3}
+dinov2_tuned_mt seeds=[0, 1, 2]
+   acc      86.93 +- 2.17  CI95 [82.97, 90.75]  card baseline 84.14 inside CI
+   macroF1  84.72 +- 2.29  CI95 [79.66, 89.11]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 81.54, 'Straight': 91.21, 'Rejected': 81.42} | majority vote: {'acc': 89.43, 'macroF1': 87.37}
+dinov2_f10_cls seeds=[0, 1, 2]
+   acc      76.80 +- 1.67  CI95 [71.95, 81.20]  card baseline 84.14 OUTSIDE CI
+   macroF1  68.82 +- 2.72  CI95 [62.60, 74.26]  card baseline 81.74 OUTSIDE CI
+   per-class F1: {'Leaned': 70.28, 'Straight': 84.83, 'Rejected': 51.36} | majority vote: {'acc': 79.74, 'macroF1': 72.51}
+dinov2_f10_mt seeds=[0, 1, 2]
+   acc      77.24 +- 3.56  CI95 [72.25, 81.79]  card baseline 84.14 OUTSIDE CI
+   macroF1  68.46 +- 4.68  CI95 [61.99, 74.08]  card baseline 81.74 OUTSIDE CI
+   per-class F1: {'Leaned': 69.75, 'Straight': 85.48, 'Rejected': 50.14} | majority vote: {'acc': 79.74, 'macroF1': 70.41}
+dinov2_f25_cls seeds=[0, 1, 2]
+   acc      82.82 +- 0.76  CI95 [78.56, 86.64]  card baseline 84.14 inside CI
+   macroF1  78.83 +- 0.73  CI95 [73.18, 83.73]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 75.26, 'Straight': 89.0, 'Rejected': 72.23} | majority vote: {'acc': 83.7, 'macroF1': 79.78}
+dinov2_f25_mt seeds=[0, 1, 2]
+   acc      83.11 +- 2.26  CI95 [79.00, 86.78]  card baseline 84.14 inside CI
+   macroF1  78.55 +- 3.05  CI95 [72.95, 83.17]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 76.65, 'Straight': 89.28, 'Rejected': 69.72} | majority vote: {'acc': 85.46, 'macroF1': 81.42}
+dinov2_f50_cls seeds=[0, 1, 2]
+   acc      85.02 +- 0.00  CI95 [81.06, 88.84]  card baseline 84.14 inside CI
+   macroF1  82.13 +- 0.46  CI95 [76.76, 86.66]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 77.28, 'Straight': 90.56, 'Rejected': 78.57} | majority vote: {'acc': 88.55, 'macroF1': 86.29}
+dinov2_f50_mt seeds=[0, 1, 2]
+   acc      84.43 +- 0.67  CI95 [80.32, 88.25]  card baseline 84.14 inside CI
+   macroF1  81.36 +- 0.66  CI95 [76.03, 85.95]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 77.38, 'Straight': 89.79, 'Rejected': 76.91} | majority vote: {'acc': 86.34, 'macroF1': 83.76}
+
+== 2-3. pairwise: bootstrap CI of the difference (B - A) + exact McNemar
+dinov2_f10_mt vs dinov2_f10_cls:
+   dacc      +0.44  CI95 [-1.62, +2.50]  P(diff<=0)=0.362
+   dmacroF1  -0.37  CI95 [-3.34, +2.51]  P(diff<=0)=0.594
+   McNemar per seed  s0: b=3 c=6 p=0.508, s1: b=11 c=7 p=0.481, s2: b=8 c=12 p=0.503
+   McNemar maj.vote  b=5 c=5 p=1.0000  Holm-adj p=1.0000
+   (b = A right & B wrong, c = A wrong & B right)
+dinov2_f25_mt vs dinov2_f25_cls:
+   dacc      +0.29  CI95 [-2.06, +2.50]  P(diff<=0)=0.424
+   dmacroF1  -0.28  CI95 [-3.06, +2.40]  P(diff<=0)=0.591
+   McNemar per seed  s0: b=11 c=7 p=0.481, s1: b=9 c=12 p=0.664, s2: b=8 c=11 p=0.648
+   McNemar maj.vote  b=5 c=9 p=0.4240  Holm-adj p=0.9969
+   (b = A right & B wrong, c = A wrong & B right)
+dinov2_f50_mt vs dinov2_f50_cls:
+   dacc      -0.59  CI95 [-3.08, +1.91]  P(diff<=0)=0.688
+   dmacroF1  -0.78  CI95 [-3.96, +2.45]  P(diff<=0)=0.692
+   McNemar per seed  s0: b=13 c=10 p=0.678, s1: b=9 c=9 p=1.000, s2: b=14 c=13 p=1.000
+   McNemar maj.vote  b=11 c=6 p=0.3323  Holm-adj p=0.9969
+   (b = A right & B wrong, c = A wrong & B right)
+dinov2_tuned_mt vs dinov2_tuned_cls:
+   dacc      +0.59  CI95 [-2.06, +3.38]  P(diff<=0)=0.353
+   dmacroF1  +1.23  CI95 [-2.01, +4.70]  P(diff<=0)=0.230
+   McNemar per seed  s0: b=14 c=13 p=1.000, s1: b=13 c=10 p=0.678, s2: b=4 c=12 p=0.077
+   McNemar maj.vote  b=6 c=12 p=0.2379  Holm-adj p=0.9515
+   (b = A right & B wrong, c = A wrong & B right)
+
+saved /marimo/results/b6_h3_dataeff_dinov2/analysis.json

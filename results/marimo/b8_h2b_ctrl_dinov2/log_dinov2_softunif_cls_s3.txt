@@ -1,0 +1,12 @@
+{'train': 1706, 'val': 341, 'test': 227} train imgs with kp: 1149 | size mismatches dropped: 87
+soft targets (uniform): 1149 images, mean mass off the hard label 0.0891
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 3508.02it/s]
+/marimo/train_multitask.py:239: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
+/marimo/train_multitask.py:258: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scaler.step(opt); scaler.update(); sched.step()
+seed3 ep0 val acc 0.6129 macroF1 0.6029
+seed3 ep1 val acc 0.6158 macroF1 0.6170
+seed3 ep2 val acc 0.7595 macroF1 0.7493
+seed3 ep3 val acc 0.8622 macroF1 0.8374
+seed3 ep4 val acc 0.8534 macroF1 0.8211

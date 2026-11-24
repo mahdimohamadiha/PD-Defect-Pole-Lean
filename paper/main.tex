@@ -54,8 +54,8 @@ loss does not change classification quality on either backbone ($+1.2$ and $-1.3
 confidence intervals containing zero), nor with 10--50\% of the training data, nor with stronger photometric
 augmentation. Angle-aware soft targets improve calibration (test NLL $0.58 \rightarrow 0.48$), but controls
 with shuffled angles or uniform smoothing of the same mass do equally well, so the gain comes from target
-smoothing rather than from geometry. Finally, an explainability test shows that keypoint supervision does
-not focus the classifier's attention on the pole, and the backbone with the most pole-focused attention is
+smoothing rather than from geometry. Finally, an explainability test shows that both models already attend to
+the pole and that keypoint supervision does not make this attention more pole-focused, while the backbone with the most pole-focused attention is
 the less accurate one. The joint model still predicts the pole axis (mean angle error $0.97^\circ$) at no
 cost in accuracy. Code, checkpoints and all per-image predictions are released.
 \end{abstract}
@@ -119,8 +119,8 @@ Our contributions are:
   \item \textbf{Angle-aware soft targets with proper controls.} Soft targets improve calibration, but an
         angle-shuffled and a uniform-smoothing control show that the gain is due to smoothing, not to the
         angle (\cref{sec:h2}).
-  \item \textbf{A quantitative explainability test.} Keypoint supervision does not concentrate attention on
-        the pole, and better pole-focused attention does not go with higher accuracy (\cref{sec:xai}).
+  \item \textbf{A quantitative explainability test.} Both models attend to the pole, but keypoint supervision
+        does not make attention more pole-focused, and better pole-focused attention does not go with higher accuracy (\cref{sec:xai}).
 \end{enumerate}
 
 % =====================================================================================================
@@ -561,7 +561,8 @@ soft $-$ uniform-smoothing control           & $+2.19$ [$+0.13, +4.35$] \\
 
 \subsection{X1: does keypoint supervision change where the model looks?}
 \label{sec:xai}
-Even without an accuracy gain, keypoint supervision might focus the classifier on the pole.
+Even without an accuracy gain, keypoint supervision might make the classifier rely more on the pole than
+classification-only training does.
 For the 143 Leaned / Straight test images with a GT pole box, we computed (i) Grad-CAM at the input of the last
 transformer block (ReLU of the gradient-weighted activations of the predicted class, per patch token) and (ii)
 the last-layer attention of the CLS token, averaged over heads, on patch tokens only. The primary metric is the
@@ -671,8 +672,8 @@ of a few hundred images, single-seed comparisons and untuned baselines are not s
 \label{sec:conclusion}
 We evaluated whether pole-axis keypoints improve image-level lean classification on PD-Defect under
 controlled conditions. They do not: after equal-budget tuning, with less data, with stronger augmentation and
-with angle-aware targets, the effects stay within the noise of fine-tuning, and keypoint supervision does not
-focus the model's attention on the pole. The binding constraint is the label, which follows an implicit
+with angle-aware targets, the effects stay within the noise of fine-tuning, and keypoint supervision does not make the
+model's attention more pole-focused than classification-only training. The binding constraint is the label, which follows an implicit
 $3^\circ$ threshold with an ambiguous band around it. Softened targets improve calibration, but plain
 smoothing does the same. We also identified a cross-task leakage in the dataset that affects more than half
 of the classification test set for any method that uses the keypoint split, and we provide a leakage-free

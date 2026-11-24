@@ -9,7 +9,7 @@ regresses the pole axis (bottom and top keypoints).
 > final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers), as are the diagnostic analyses and
 > the pre-registered follow-ups: H1 (photometric augmentation) and H3 (data efficiency) are null; H2 (GT-angle soft
 > labels) improves calibration, but the H2b controls show that this comes from target smoothing, not from the
-> angle. The explainability test (X1) finds that keypoint supervision does not focus attention on the pole. Next:
+> angle. The explainability test (X1) finds that both models attend to the pole, but keypoint supervision does not make attention more pole-focused. Next:
 > the paper.
 
 ## Headline: tuned models (final)
@@ -332,7 +332,7 @@ any map was inspected).
   comparison) showed a hot spot on a few high-norm background tokens. This is the known ViT "artifact token"
   effect (Darcet et al., 2024). A robustness variant is therefore added, which excludes tokens whose last-layer
   norm is more than 3× the median. The primary metric is unchanged.
-- **Result: prediction not supported. Keypoint supervision does not focus the classifier on the pole.**
+- **Result: prediction not supported. Both models attend to the pole; keypoint supervision does not make attention more pole-focused.**
   143 images, mean over seeds 0–2, chance level (box area) 9.1%
   ([`xai_stats.txt`](results/analysis/xai/xai_stats.txt), per-image rows in
   [`results/marimo/xai_x1/`](results/marimo/xai_x1)):

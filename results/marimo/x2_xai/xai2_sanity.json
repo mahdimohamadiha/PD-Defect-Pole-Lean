@@ -1,0 +1,18 @@
+{
+ "att": {
+  "median_spearman": 0.03211818718260496,
+  "mean_spearman": 0.030298299909267468
+ },
+ "rollout": {
+  "median_spearman": 0.9589127096595378,
+  "mean_spearman": 0.9556035101865268
+ },
+ "chefer": {
+  "median_spearman": 0.7037732011301051,
+  "mean_spearman": 0.6922337651016639
+ },
+ "gradcam": {
+  "median_spearman": 0.07950902117159,
+  "mean_spearman": 0.07177011857188302
+ }
+}

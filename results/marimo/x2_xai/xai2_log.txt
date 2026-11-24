@@ -38,3 +38,6 @@ dinov2_soft_mt_s1: pole reliance +1.605 | aoc_att 4.101 aoc_rollout 2.501 aoc_ch
 Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4306.72it/s]
 dinov2_soft_mt_s2: pole reliance +1.730 | aoc_att 3.693 aoc_rollout 2.524 aoc_chefer 5.034 aoc_gradcam 1.330 aoc_random 0.270 | box_att 0.425 box_rollout 0.097 box_chefer 0.374 box_gradcam 0.131
 Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4565.97it/s]
+sanity: {'att': {'median_spearman': 0.03211818718260496, 'mean_spearman': 0.030298299909267468}, 'rollout': {'median_spearman': 0.9589127096595378, 'mean_spearman': 0.9556035101865268}, 'chefer': {'median_spearman': 0.7037732011301051, 'mean_spearman': 0.6922337651016639}, 'gradcam': {'median_spearman': 0.07950902117159, 'mean_spearman': 0.07177011857188302}}
+done 2574
+xai2 exit 0

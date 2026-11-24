@@ -172,6 +172,20 @@ frequent in train `Rejected`, and that valid dusk or night poles are wrongly pre
 - *Secondary outcomes:* `Rejected` F1, and the false-`Rejected` rate on low-light Leaned/Straight test images
   (lowest quartile of mean grey value; [`tools/analysis/h1_dark.py`](tools/analysis/h1_dark.py)).
 - *Prediction:* `Rejected` F1 and Macro-F1 increase.
+- **Result: not supported (null).** Test, mean ± std over seeds 0–2 ([`analysis.txt`](results/marimo/b5_h1_photo_dinov2/analysis.txt),
+  [`h1_dark.txt`](results/analysis/h1/h1_dark.txt)):
+
+  | model | Macro-F1 | Δ vs base aug [95% CI] | McNemar Holm p | `Rejected` F1 | false-`Rejected`, low-light L/S |
+  |---|---|---|---|---|---|
+  | `cls`, base aug (b4a) | 83.50 ± 0.67 | – | – | 80.4 | 7.6% |
+  | `cls`, photo aug | 83.47 ± 1.72 | −0.03 [−3.03, +3.03] | 1.00 | 79.0 | 7.6% |
+  | `mt`, base aug (b4a) | 84.72 ± 2.29 | – | – | 81.4 | 10.4% |
+  | `mt`, photo aug | 83.42 ± 1.22 | −1.30 [−4.12, +1.53] | 0.63 | 78.9 | 8.3% |
+
+  Photometric augmentation did not raise Macro-F1 or `Rejected` F1, and did not remove the low-light false-`Rejected`
+  errors (7.6% → 7.6% for `cls`). This suggests that the darkness association is not a simple intensity shortcut.
+  Low-light images also tend to be blurred, backlit or noisy in ways that resemble the true `Rejected` images. With
+  photo aug, `mt` and `cls` are equal (−0.04 [−2.24, +2.16]). The main results keep `--aug base`.
 
 **H3: data efficiency (batch `b6_h3_dataeff_dinov2`).** Auxiliary keypoint supervision should matter more when
 labelled images are scarce.

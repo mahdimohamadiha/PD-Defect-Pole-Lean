@@ -166,6 +166,15 @@ def evaluate(model, dl, dev, full=False):
 
 def run(args, seed, idx):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
+    if args.train_frac < 1.0:   # H3: stratified train subset; depends only on the seed, so cls and mt see the same subset
+        _rng = np.random.default_rng(1000 + seed)
+        _sub = []
+        for _c in range(len(CLASSES)):
+            _it = [x for x in idx["train"] if x[1] == _c]
+            _k = max(1, int(round(args.train_frac * len(_it))))
+            _sub += [_it[j] for j in sorted(_rng.choice(len(_it), _k, replace=False))]
+        idx = {**idx, "train": _sub}
+        print(f"train subset: frac {args.train_frac} -> {len(_sub)} images, {sum(x[2] is not None for x in _sub)} with kp")
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     mk = lambda sp, tr: DataLoader(PoleDS(idx[sp], args.size, tr, args.aug), batch_size=args.bs, shuffle=tr,
                                    num_workers=args.workers, drop_last=tr, persistent_workers=args.workers > 0)
@@ -241,6 +250,7 @@ if __name__ == "__main__":
     ap.add_argument("--ckpt_dir", default=None, help="save best checkpoint (fp16) per run here")
     ap.add_argument("--aug", default="base", choices=["base", "photo"],
                     help="base = hflip + colour jitter; photo = base + random gamma + low-light simulation (H1)")
+    ap.add_argument("--train_frac", type=float, default=1.0, help="H3: stratified fraction of the train split")
     ap.add_argument("--no_test", action="store_true", help="skip the test split entirely (hyper-parameter search)")
     ap.add_argument("--data_dir", default="/kaggle/working/pd-defect", help="download target (--root should be <data_dir>/pole_lean_assessment)")
     a = ap.parse_args()

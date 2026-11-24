@@ -172,8 +172,16 @@ frequent in train `Rejected`, and that valid dusk or night poles are wrongly pre
 - *Secondary outcomes:* `Rejected` F1, and the false-`Rejected` rate on dark test images.
 - *Prediction:* `Rejected` F1 and Macro-F1 increase.
 
-**H3: data efficiency.** `cls` vs `mt` trained on 10 / 25 / 50% of train (stratified subsets fixed by seed).
-Prediction: the `mt` gain grows as data shrinks. The design will be detailed here before it runs.
+**H3: data efficiency (batch `b6_h3_dataeff_dinov2`).** Auxiliary keypoint supervision should matter more when
+labelled images are scarce.
+- *Intervention:* train on a stratified 10 / 25 / 50% subset of the classification-train split (`--train_frac`).
+  The subset is drawn with rng `1000 + seed`, so `cls` and `mt` of the same seed see the same images, and the
+  keypoints are those of the subset only.
+- *Setting:* DINOv2-base with the batch-3 hyper-parameters. The number of optimisation steps is held equal to the
+  full-data runs (epochs = 15 / fraction). Seeds 0–2. The full-data reference is `b4a`.
+- *Primary outcome:* Δ Macro-F1 (`mt` − `cls`) at each fraction (paired bootstrap and McNemar, Holm over the 4 pairs
+  including full data).
+- *Prediction:* Δ is positive and grows as the fraction shrinks.
 
 **H2: ambiguity-aware soft labels.** Soft Leaned/Straight targets from the GT axis angle around the ≈ 3° implicit
 threshold, for train images with keypoints. Prediction: fewer errors in the 2–6° band and better calibration.

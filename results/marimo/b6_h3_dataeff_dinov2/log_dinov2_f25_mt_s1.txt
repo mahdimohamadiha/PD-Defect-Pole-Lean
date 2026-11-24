@@ -50,3 +50,32 @@ seed1 ep41 val acc 0.8270 macroF1 0.7665
 seed1 ep42 val acc 0.8270 macroF1 0.7665
 seed1 ep43 val acc 0.8270 macroF1 0.7665
 seed1 ep44 val acc 0.8270 macroF1 0.7665
+seed1 ep45 val acc 0.8270 macroF1 0.7665
+seed1 ep46 val acc 0.8270 macroF1 0.7665
+seed1 ep47 val acc 0.8270 macroF1 0.7665
+seed1 ep48 val acc 0.8270 macroF1 0.7665
+seed1 ep49 val acc 0.8270 macroF1 0.7665
+seed1 ep50 val acc 0.8270 macroF1 0.7665
+seed1 ep51 val acc 0.8270 macroF1 0.7665
+seed1 ep52 val acc 0.8270 macroF1 0.7665
+seed1 ep53 val acc 0.8270 macroF1 0.7665
+seed1 ep54 val acc 0.8270 macroF1 0.7665
+seed1 ep55 val acc 0.8270 macroF1 0.7665
+seed1 ep56 val acc 0.8270 macroF1 0.7665
+seed1 ep57 val acc 0.8270 macroF1 0.7665
+seed1 ep58 val acc 0.8270 macroF1 0.7665
+seed1 ep59 val acc 0.8270 macroF1 0.7665
+              precision    recall  f1-score   support
+
+      Leaned     0.8182    0.7258    0.7692        62
+    Straight     0.8521    0.9453    0.8963       128
+    Rejected     0.8000    0.6486    0.7164        37
+
+    accuracy                         0.8370       227
+   macro avg     0.8234    0.7733    0.7940       227
+weighted avg     0.8344    0.8370    0.8323       227
+
+{'seed': 1, 'mode': 'mt', 'tag': 'dinov2_f25_mt', 'backbone': 'facebook/dinov2-base', 'best_epoch': 12, 'val_macroF1': 0.7677356841826245, 'val_acc': 0.8328445747800587, 'test_acc': 0.8370044052863436, 'test_macroF1': 0.7939816586582755}
+val_macroF1 0.7677 +- 0.0000
+test_acc 0.8370 +- 0.0000
+test_macroF1 0.7940 +- 0.0000

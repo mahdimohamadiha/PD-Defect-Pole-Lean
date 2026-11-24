@@ -274,6 +274,30 @@ in H2.
 - *Decision rule (fixed now):* the paper claims an angle-specific benefit only if soft > both controls in
   Macro-F1 with a 95% CI above 0. Otherwise it reports a smoothing / calibration effect.
 
+**X1: does keypoint supervision make the classifier look at the pole? (explainability, no training).**
+Keypoint supervision did not raise accuracy. It could still change *what* the classifier relies on. This is
+tested on the saved checkpoints ([`tools/analysis/xai_attention.py`](tools/analysis/xai_attention.py), written before
+any map was inspected).
+- *Images:* the 143 Leaned/Straight test images with a GT pole box (keypoint labels, same image size). The
+  boxes are used for evaluation only.
+- *Maps:*
+  - Grad-CAM at the input of the last transformer block: ReLU(Σ grad · activation) per patch token, for the
+    gradient of the predicted-class logit;
+  - last-layer CLS attention, averaged over heads, over patch tokens only (register tokens excluded).
+- *Primary metric:* Grad-CAM energy-in-box, i.e. the share of relevance inside the GT pole box (chance level =
+  box area share, mean ≈ 9%). Computed per image and averaged over seeds 0–2.
+- *Models:* tuned `cls` / `mt` for DINOv2 (b4a) and DINOv2-reg (b4b), and soft `cls` / `mt` (b7).
+- *Tests:* paired over images, with a bootstrap 95% CI of the mean difference and a Wilcoxon signed-rank test.
+  Holm correction over 3 comparisons: DINOv2 `mt` vs `cls`, DINOv2-reg `mt` vs `cls`, and DINOv2 soft `cls` vs hard
+  `cls`.
+- *Prediction:* `mt` > `cls` in energy-in-box for both backbones. Soft vs hard is two-sided, with no directional
+  prediction.
+- *Secondary metrics:* CLS-attention energy-in-box and the pointing-game hit rate (top patch inside the box).
+- *Descriptive figure:* the maps of every image in this set misclassified by `dinov2_tuned_cls` seed 0, plus 8
+  images drawn at random (rng 0). No hand-picked examples.
+- *Caveat:* saliency shows correlation, not causation. A higher energy-in-box does not prove that the decision
+  is made for the right reason.
+
 ## Data protocol
 
 - **Only the official classification split** is used: train 1706 / val 341 / test 227

@@ -6,3 +6,11 @@
   scaler.step(opt); scaler.update(); sched.step()
 seed2 ep0 val acc 0.7918 macroF1 0.7376
 seed2 ep1 val acc 0.7947 macroF1 0.7685
+seed2 ep2 val acc 0.8270 macroF1 0.8071
+seed2 ep3 val acc 0.8328 macroF1 0.8099
+seed2 ep4 val acc 0.7830 macroF1 0.7619
+seed2 ep5 val acc 0.8651 macroF1 0.8456
+seed2 ep6 val acc 0.8622 macroF1 0.8373
+seed2 ep7 val acc 0.8710 macroF1 0.8468
+seed2 ep8 val acc 0.8768 macroF1 0.8476
+seed2 ep9 val acc 0.8592 macroF1 0.8339

@@ -5,3 +5,11 @@
 /marimo/train_multitask.py:224: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
   scaler.step(opt); scaler.update(); sched.step()
 seed1 ep0 val acc 0.7654 macroF1 0.7076
+seed1 ep1 val acc 0.7625 macroF1 0.7218
+seed1 ep2 val acc 0.8035 macroF1 0.7730
+seed1 ep3 val acc 0.8211 macroF1 0.7984
+seed1 ep4 val acc 0.8358 macroF1 0.7934
+seed1 ep5 val acc 0.7947 macroF1 0.7793
+seed1 ep6 val acc 0.8798 macroF1 0.8644
+seed1 ep7 val acc 0.8504 macroF1 0.8126
+seed1 ep8 val acc 0.8622 macroF1 0.8481

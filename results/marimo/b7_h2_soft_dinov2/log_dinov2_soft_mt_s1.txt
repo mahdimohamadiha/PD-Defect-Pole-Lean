@@ -14,3 +14,22 @@ seed1 ep6 val acc 0.8680 macroF1 0.8474
 seed1 ep7 val acc 0.8475 macroF1 0.8083
 seed1 ep8 val acc 0.8534 macroF1 0.8292
 seed1 ep9 val acc 0.8710 macroF1 0.8474
+seed1 ep10 val acc 0.8739 macroF1 0.8478
+seed1 ep11 val acc 0.8680 macroF1 0.8445
+seed1 ep12 val acc 0.8651 macroF1 0.8421
+seed1 ep13 val acc 0.8651 macroF1 0.8418
+seed1 ep14 val acc 0.8651 macroF1 0.8418
+              precision    recall  f1-score   support
+
+      Leaned     0.7879    0.8387    0.8125        62
+    Straight     0.9256    0.8750    0.8996       128
+    Rejected     0.7750    0.8378    0.8052        37
+
+    accuracy                         0.8590       227
+   macro avg     0.8295    0.8505    0.8391       227
+weighted avg     0.8634    0.8590    0.8604       227
+
+{'seed': 1, 'mode': 'mt', 'tag': 'dinov2_soft_mt', 'backbone': 'facebook/dinov2-base', 'best_epoch': 10, 'val_macroF1': 0.8477750998638727, 'val_acc': 0.873900293255132, 'test_acc': 0.8590308370044053, 'test_macroF1': 0.8390977329230341, 'checkpoint': 'dinov2_soft_mt_s1.pt'}
+val_macroF1 0.8478 +- 0.0000
+test_acc 0.8590 +- 0.0000
+test_macroF1 0.8391 +- 0.0000

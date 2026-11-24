@@ -1,0 +1,2 @@
+{'train': 1706, 'val': 341, 'test': 227} train imgs with kp: 1149 | size mismatches dropped: 87
+soft targets (shuffle): 1149 images, mean mass off the hard label 0.0891

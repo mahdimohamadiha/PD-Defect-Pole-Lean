@@ -4,3 +4,12 @@
   scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
 /marimo/train_multitask.py:178: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
   scaler.step(opt); scaler.update(); sched.step()
+seed101 ep0 val acc 0.4194 macroF1 0.4032
+seed101 ep1 val acc 0.7801 macroF1 0.7147
+seed101 ep2 val acc 0.8152 macroF1 0.7849
+seed101 ep3 val acc 0.8240 macroF1 0.7893
+seed101 ep4 val acc 0.8416 macroF1 0.8078
+seed101 ep5 val acc 0.8182 macroF1 0.7640
+seed101 ep6 val acc 0.8152 macroF1 0.7963
+seed101 ep7 val acc 0.8123 macroF1 0.7890
+seed101 ep8 val acc 0.8270 macroF1 0.8006

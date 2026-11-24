@@ -1,6 +1,6 @@
 # Paper draft (LaTeX)
 
-- `main.tex`: manuscript (Elsevier `elsarticle`, preprint layout); `references.bib`: bibliography.
+- `main.tex`: manuscript (plain `article` class, arXiv preprint layout); `references.bib`: bibliography.
 - `figures/`: all figures, as vector PDF (plots) and 300-dpi PNG. LaTeX picks the PDF versions.
 - `make_figures.py`: rebuilds every data figure from the saved results in `results/` (no training):
   `python paper/make_figures.py --root <pole_lean_assessment>` (run from the repo root; needs matplotlib).

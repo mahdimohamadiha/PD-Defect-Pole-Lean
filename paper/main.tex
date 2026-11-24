@@ -1,14 +1,18 @@
-\documentclass[preprint,12pt]{elsarticle}
+\documentclass[11pt]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{microtype}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{xcolor}
+\usepackage{authblk}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,fit,backgrounds}
 \usepackage[hidelinks]{hyperref}
@@ -19,23 +23,19 @@
 \newcommand{\cls}{\texttt{cls}}
 \newcommand{\mt}{\texttt{mt}}
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\renewcommand\Affilfont{\small}
 
-\journal{Engineering Applications of Artificial Intelligence}
+\title{A Controlled, Pre-specified Evaluation of Multi-task Learning\\ for Utility-Pole Lean Assessment}
+
+% ---- authors: to be completed by the authors (kept as placeholders on purpose) ----
+\author[1]{Author One\thanks{Corresponding author: \texttt{author.one@example.org}}}
+\author[1]{Author Two}
+\affil[1]{Department, University, City, Country}
+\date{}
 
 \begin{document}
 
-\begin{frontmatter}
-
-\title{A Controlled, Pre-specified Evaluation of Multi-task Learning for Utility-Pole Lean Assessment}
-
-% ---- authors: to be completed by the authors (kept as placeholders on purpose) ----
-\author[aff1]{Author One\corref{cor1}}
-\ead{author.one@example.org}
-\author[aff1]{Author Two}
-\cortext[cor1]{Corresponding author.}
-\affiliation[aff1]{organization={Department, University},
-            city={City},
-            country={Country}}
+\maketitle
 
 \begin{abstract}
 Automated assessment of leaning utility poles from smartphone images can support the inspection of power
@@ -60,12 +60,8 @@ the less accurate one. The joint model still predicts the pole axis (mean angle 
 cost in accuracy. Code, checkpoints and all per-image predictions are released.
 \end{abstract}
 
-\begin{keyword}
-power distribution inspection \sep utility pole \sep multi-task learning \sep vision transformer \sep
-label smoothing \sep calibration \sep explainability \sep data leakage
-\end{keyword}
-
-\end{frontmatter}
+\noindent\textbf{Keywords:} power distribution inspection; utility pole; multi-task learning; vision transformer;
+label smoothing; calibration; explainability; data leakage
 
 % =====================================================================================================
 \section{Introduction}
@@ -697,17 +693,14 @@ PD-Defect is available under CC BY 4.0 \citep{pddefect_data}. Code, analysis scr
 per-image results and the pre-specification history: \todo{repository URL}.\\
 Fine-tuned checkpoints: \url{https://huggingface.co/northlattice/pd-defect-pole-lean-checkpoints}.
 
-\section*{CRediT authorship contribution statement}
+\section*{Acknowledgements}
 \todo{to be completed by the authors.}
 
-\section*{Declaration of competing interest}
-The authors declare that they have no known competing financial interests or personal relationships that could
-have appeared to influence the work reported in this paper.
-
-\section*{Declaration of generative AI use}
-\todo{Describe the use of AI assistance in the analysis and writing, as required by the journal's policy.}
+\section*{Use of AI assistance}
+\todo{Describe the use of AI assistance in the analysis and writing.}
 
 \appendix
+\renewcommand{\thetable}{\Alph{section}.\arabic{table}}
 \section{Results at default hyper-parameters}
 \label{app:default}
 
@@ -760,7 +753,7 @@ cfg & lr backbone & lr head & epochs & \cls{} & \mt{} ($\lambda$) & \cls{} & \mt
 \end{tabular}
 \end{table}
 
-\bibliographystyle{elsarticle-num-names}
+\bibliographystyle{unsrtnat}
 \bibliography{references}
 
 \end{document}

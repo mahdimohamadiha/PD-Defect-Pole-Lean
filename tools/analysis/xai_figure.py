@@ -45,8 +45,9 @@ def main():
             base = im.copy(); d = ImageDraw.Draw(base)
             cx, cy, w, hh = box
             d.rectangle([(cx - w / 2) * T, (cy - hh / 2) * T, (cx + w / 2) * T, (cy + hh / 2) * T], outline="lime", width=2)
-            d.rectangle([0, 0, T, 14], fill="black")
-            d.text((2, 1), f"{f} GT {CL[y]} | cls {CL[r0[f]['pred']]} | mt {CL[pmt[f]]}"[:34], fill="white")
+            d.rectangle([0, 0, T, 26], fill="black")
+            d.text((2, 1), f"{f}  GT {CL[y]}", fill="white")
+            d.text((2, 13), f"pred cls {CL[r0[f]['pred']]} / mt {CL[pmt[f]]}", fill="white")
             tiles = [base] + [overlay(im, maps[k][f][t], box, T) for k, t in COLS]
             r = Image.new("RGB", (W, T), "white"); [r.paste(t, (T * i, 0)) for i, t in enumerate(tiles)]; rows_img.append(r)
         hdr = Image.new("RGB", (W, 16), "white"); d = ImageDraw.Draw(hdr)

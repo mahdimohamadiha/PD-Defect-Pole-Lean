@@ -358,6 +358,9 @@ any map was inspected).
     and its attention peak lies on the pole in 86–88% of images, against 26–49% for DINOv2. Yet DINOv2-reg is the
     *less* accurate backbone here (79.97–81.31 vs 83.50–84.72 Macro-F1). Better-localised attention therefore did
     not translate into better lean classification.
+  - Pre-registered descriptive figures (seed 0, no hand-picking): [all 14 images misclassified by `cls`](results/analysis/xai/xai_misclassified_by_cls_s0.jpg)
+    and [8 random images](results/analysis/xai/xai_random8_rng0.jpg). The attention traces the pole shaft, while
+    Grad-CAM is faint and diffuse. The small red squares in the corners are artifact tokens.
   - Caveat: these are correlational saliency measures, not causal evidence.
 
 ## Data protocol

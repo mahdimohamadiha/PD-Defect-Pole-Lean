@@ -35,6 +35,7 @@ the pole axis (bottom and top keypoints).
 | `dinov2_mt_geo_d` | DINOv2 (base) | `mt` + classifier also sees the geometry of the predicted axis (detached keypoints) |
 | `dinov2_soft_cls` / `dinov2_soft_mt` (`b7_h2_soft_dinov2/`) | DINOv2 (base) | tuned config + angle-aware soft Leaned/Straight targets (H2) |
 | `dinov2_photo_cls` / `dinov2_photo_mt` (`b5_h1_photo_dinov2/`) | DINOv2 (base) | tuned config + extra photometric augmentation (H1) |
+| `b8_h2b_ctrl_dinov2/`: `dinov2_tuned_cls`, `dinov2_soft_cls` (seeds 3–5), `dinov2_softshuf_cls`, `dinov2_softunif_cls` (seeds 0–5) | DINOv2 (base) | replication and smoothing controls for the soft targets (H2b) |
 
 The batch-1 DINOv2 `cls` / `mt` models (default settings) were trained before checkpoint saving was enabled.
 The tuned DINOv2 checkpoints above replace them.
@@ -84,8 +85,21 @@ tuned model with the same mode):
 
 - *Soft targets:* for Leaned/Straight train images with keypoints, the target is
   0.5·onehot + 0.5·[p, 1 − p, 0], with p = sigmoid((θ − 3.03°)/1°) and θ the ground-truth axis angle.
-  This gives the largest Macro-F1 gain (not significant) and clearly better calibration. A label-smoothing
-  control has not been run yet.
+- *Replication and controls (6 seeds, `cls`):*
+
+  | targets | Macro-F1 | NLL | ECE |
+  |---|---|---|---|
+  | hard | 83.18 ± 1.13 | 0.577 | 10.1% |
+  | soft, GT angle | 85.10 ± 1.98 | 0.475 | 7.5% |
+  | soft, angles shuffled within class | 84.30 ± 1.66 | 0.476 | 6.4% |
+  | uniform smoothing, same mass | 82.91 ± 2.05 | 0.492 | 7.3% |
+
+  On new seeds 3–5, soft − hard is +1.49 [−1.3, +4.4], and soft − shuffled is +0.80 [−1.3, +2.9]. So there is no
+  evidence that the per-image angle helps. The calibration gain is real, but it comes from softened targets in
+  general.
+- *Explainability:* the auxiliary keypoint loss does not concentrate Grad-CAM or CLS attention on the pole. The
+  DINOv2-with-registers models attend to the pole much more consistently (the attention peak falls on the pole in
+  86–88% of images vs 26–49%), yet they are the less accurate backbone here.
 - *Photometric augmentation* (random gamma and low-light simulation) does not help.
 - *Data efficiency:* with 10 / 25 / 50% of the training images, `mt` and `cls` stay within 1 point of each other
   (no checkpoints).
@@ -101,6 +115,7 @@ b4b_final_dinov2reg/<tag>_s<seed>.pt     tuned DINOv2 with registers, seeds 0, 1
 b2_dinov2reg_geofix/<tag>_s<seed>.pt     default settings, seeds 0, 1, 2
 b5_h1_photo_dinov2/<tag>_s<seed>.pt      DINOv2 + photometric augmentation, seeds 0, 1, 2
 b7_h2_soft_dinov2/<tag>_s<seed>.pt       DINOv2 + soft targets, seeds 0, 1, 2
+b8_h2b_ctrl_dinov2/<tag>_s<seed>.pt      DINOv2 cls: hard / soft seeds 3-5, smoothing controls seeds 0-5
 ```
 
 Each file is a `torch.save` dict with these keys:

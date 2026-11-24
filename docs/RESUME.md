@@ -44,3 +44,18 @@ Last updated: 2026-11-23, after batch `b4a_final_dinov2`.
 The notebook's `launch` cell is idempotent: finished runs (existing `res_*.json`) are skipped. A batch
 interrupted by a sandbox shutdown can therefore be resumed by re-running the notebook, after copying
 the batch's existing results back into `/marimo/results/<batch>/`.
+
+## Status 2026-11-24 (end of session)
+- All main runs done (b1, b2, b3, b4a, b3b, b4b). Checkpoints on HF. README + HF card are up to date.
+- Phase 1 diagnostics done (no GPU): `results/analysis/phase1/phase1.txt`, `docs/phase1_error_analysis.md`.
+  Labels follow an implicit ~3° threshold. Leaned vs Straight is near the label-consistency ceiling. The headroom
+  is in `Rejected`, which uses darkness as a shortcut.
+- Next, in this order. Each hypothesis is pre-registered in the README before running, uses equal-budget tuning
+  and a single test evaluation:
+  1. H1: stronger photometric augmentation (wider brightness, gamma, low-light simulation) against the darkness
+     shortcut. This needs the user's OK to extend the augmentation protocol in CLAUDE.md.
+  2. H3: data efficiency (10 / 25 / 50% of train) for cls vs mt.
+  3. H2: GT-angle soft labels in the ambiguous 2–6° band.
+  Then: LaTeX preprint → supervisor → arXiv.
+- Restart: new molab sandbox → user sends URL + token → restore `results/marimo/*` and the scripts into
+  `/marimo`, download the data, and keep the HF token in the notebook box (see the procedure above).

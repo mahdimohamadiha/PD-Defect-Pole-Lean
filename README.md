@@ -148,7 +148,7 @@ are used here **for evaluation only**.
   GT axis angle (3.03°, fitted on train) reproduces the Leaned/Straight labels with 90.9% accuracy, and
   91.6% on test. The "angle > 10°" rule used in prior work reaches only 77.6% on test, even with GT keypoints.
   No Straight pole has a GT angle above 10°, while 16.8% of Leaned train poles are below 3°.
-- **Remaining errors sit in the ambiguous 2–6° band.** 27 of the 143 Leaned/Straight test images with GT
+- **Remaining errors sit in the ambiguous 2–6° band.** 37 of the 143 Leaned/Straight test images with GT
   keypoints lie in 2–6°, where every model errs on 10–37% of images; outside this band errors are rare.
 - **The classifiers are close to the label-consistency ceiling on Leaned vs Straight** (tuned DINOv2 `mt`:
   90.4% vs 91.6% for the GT-angle oracle rule). The headroom for higher Macro-F1 is mainly in `Rejected`

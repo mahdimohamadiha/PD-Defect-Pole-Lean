@@ -68,3 +68,4 @@ the batch's existing results back into `/marimo/results/<batch>/`.
   ECE 10.4 → 6.7%; 2–6° errors 26.1 → 17.1%. 6 checkpoints on HF. Open confound: label smoothing (control needed).
 - H2b `b8_h2b_ctrl_dinov2` done (18:00 UTC): replication +1.49 [−1.28, +4.44] n.s.; soft ≈ shuffled control → no angle-specific claim; calibration gain = smoothing. 12 ckpts on HF.
 - X1 (XAI energy-in-box) pre-registered; running in sandbox (`results/xai_x1`).
+- X1 done: mt does not increase energy-in-box (DINOv2 −1.5 pts, reg +0.1); Grad-CAM diffuse; CLS attention on pole 41–55% (chance 9%); DINOv2-reg attention pointing 86–88% vs DINOv2 26–49%, yet reg is less accurate.

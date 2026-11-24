@@ -9,7 +9,8 @@ regresses the pole axis (bottom and top keypoints).
 > final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers), as are the diagnostic analyses and
 > the pre-registered follow-ups: H1 (photometric augmentation) and H3 (data efficiency) are null; H2 (GT-angle soft
 > labels) improves calibration, but the H2b controls show that this comes from target smoothing, not from the
-> angle. Explainability analysis (X1) is next, then the paper.
+> angle. The explainability test (X1) finds that keypoint supervision does not focus attention on the pole. Next:
+> the paper.
 
 ## Headline: tuned models (final)
 
@@ -331,6 +332,33 @@ any map was inspected).
   comparison) showed a hot spot on a few high-norm background tokens. This is the known ViT "artifact token"
   effect (Darcet et al., 2024). A robustness variant is therefore added, which excludes tokens whose last-layer
   norm is more than 3× the median. The primary metric is unchanged.
+- **Result: prediction not supported. Keypoint supervision does not focus the classifier on the pole.**
+  143 images, mean over seeds 0–2, chance level (box area) 9.1%
+  ([`xai_stats.txt`](results/analysis/xai/xai_stats.txt), per-image rows in
+  [`results/marimo/xai_x1/`](results/marimo/xai_x1)):
+
+  | model | Grad-CAM in box | CLS attention in box | CLS attention in box, no artifact tokens | attention pointing hit | artifact tokens / image |
+  |---|---|---|---|---|---|
+  | DINOv2 `cls` | 9.8% | 41.1% | 50.8% | 37.8% | 7.5 |
+  | DINOv2 `mt` | 8.3% | 37.7% | 49.7% | 25.6% | 5.8 |
+  | DINOv2 soft `cls` | 8.1% | 41.9% | 52.1% | 48.7% | 9.5 |
+  | DINOv2-reg `cls` | 10.9% | 54.9% | 54.9% | 87.6% | 0 |
+  | DINOv2-reg `mt` | 10.9% | 54.7% | 54.7% | 85.5% | 0 |
+
+  - *Primary* (Grad-CAM energy-in-box, paired over images, Holm):
+    - DINOv2 `mt` − `cls`: −1.5 pts [−2.1, −0.9], p < 0.001;
+    - DINOv2-reg `mt` − `cls`: +0.1 [−1.2, +1.3], p = 0.35;
+    - soft − hard `cls`: −1.7 [−2.2, −1.2], p < 0.001.
+
+    The differences are statistically detectable but tiny. In the predicted direction there is no effect.
+  - The last-block Grad-CAM is diffuse: it is at chance level for all models, and its top patch falls in the box in
+    only 1–13% of images. It is therefore a weak instrument here. The CLS attention, by contrast, concentrates on the
+    pole for every model (41–55% of the mass in a box that covers 9% of the image).
+  - The clearest difference is between backbones, not between training modes. DINOv2-reg has no artifact tokens,
+    and its attention peak lies on the pole in 86–88% of images, against 26–49% for DINOv2. Yet DINOv2-reg is the
+    *less* accurate backbone here (79.97–81.31 vs 83.50–84.72 Macro-F1). Better-localised attention therefore did
+    not translate into better lean classification.
+  - Caveat: these are correlational saliency measures, not causal evidence.
 
 ## Data protocol
 

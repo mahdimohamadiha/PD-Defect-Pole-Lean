@@ -1,0 +1,28 @@
+== X1: n = 143 Leaned/Straight test images with a GT pole box; chance level (box area) = 9.1%
+model                         cam_in_box  cam_in_box_noart        att_in_box  att_in_box_noart           cam_hit           att_hit   n_art
+dinov2_soft_cls                     8.1%              8.8%             41.9%             52.1%              0.9%             48.7%   9.5
+dinov2_soft_mt                      8.4%              9.4%             41.3%             53.0%              1.4%             36.1%   7.4
+dinov2_tuned_cls                    9.8%             10.6%             41.1%             50.8%              1.6%             37.8%   7.5
+dinov2_tuned_mt                     8.3%              9.8%             37.7%             49.7%              0.7%             25.6%   5.8
+dinov2reg_tuned_cls                10.9%             10.9%             54.9%             54.9%             13.1%             87.6%   0.0
+dinov2reg_tuned_mt                 10.9%             10.9%             54.7%             54.7%             11.2%             85.5%   0.0
+
+-- paired differences (B - A), metric cam_in_box [PRIMARY]
+   dinov2_tuned_mt - dinov2_tuned_cls: -1.49 pts  CI95 [-2.10, -0.92]  Wilcoxon p=0.0000  Holm p=0.0000
+   dinov2reg_tuned_mt - dinov2reg_tuned_cls: +0.06 pts  CI95 [-1.18, +1.27]  Wilcoxon p=0.3505  Holm p=0.3505
+   dinov2_soft_cls - dinov2_tuned_cls: -1.65 pts  CI95 [-2.15, -1.17]  Wilcoxon p=0.0000  Holm p=0.0000
+
+-- paired differences (B - A), metric cam_in_box_noart
+   dinov2_tuned_mt - dinov2_tuned_cls: -0.78 pts  CI95 [-1.30, -0.26]  Wilcoxon p=0.0011  Holm p=0.0022
+   dinov2reg_tuned_mt - dinov2reg_tuned_cls: +0.06 pts  CI95 [-1.16, +1.28]  Wilcoxon p=0.3505  Holm p=0.3505
+   dinov2_soft_cls - dinov2_tuned_cls: -1.76 pts  CI95 [-2.27, -1.29]  Wilcoxon p=0.0000  Holm p=0.0000
+
+-- paired differences (B - A), metric att_in_box
+   dinov2_tuned_mt - dinov2_tuned_cls: -3.41 pts  CI95 [-4.08, -2.74]  Wilcoxon p=0.0000  Holm p=0.0000
+   dinov2reg_tuned_mt - dinov2reg_tuned_cls: -0.21 pts  CI95 [-1.10, +0.66]  Wilcoxon p=0.7655  Holm p=0.7655
+   dinov2_soft_cls - dinov2_tuned_cls: +0.85 pts  CI95 [+0.09, +1.58]  Wilcoxon p=0.0121  Holm p=0.0242
+
+-- paired differences (B - A), metric att_in_box_noart
+   dinov2_tuned_mt - dinov2_tuned_cls: -1.17 pts  CI95 [-1.84, -0.47]  Wilcoxon p=0.0001  Holm p=0.0004
+   dinov2reg_tuned_mt - dinov2reg_tuned_cls: -0.21 pts  CI95 [-1.10, +0.67]  Wilcoxon p=0.7655  Holm p=0.7655
+   dinov2_soft_cls - dinov2_tuned_cls: +1.26 pts  CI95 [+0.44, +2.07]  Wilcoxon p=0.0010  Holm p=0.0019

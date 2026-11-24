@@ -24,3 +24,5 @@ dinov2reg_tuned_mt_s0: pole reliance +2.400 | aoc_att 6.199 aoc_rollout 3.041 ao
 Loading weights:   0%|          | 0/224 [00:00<?, ?it/s]Loading weights: 100%|██████████| 224/224 [00:00<00:00, 4054.37it/s]
 dinov2reg_tuned_mt_s1: pole reliance +2.717 | aoc_att 5.399 aoc_rollout 2.301 aoc_chefer 7.375 aoc_gradcam 0.908 aoc_random 0.096 | box_att 0.521 box_rollout 0.102 box_chefer 0.478 box_gradcam 0.141
 Loading weights:   0%|          | 0/224 [00:00<?, ?it/s]Loading weights: 100%|██████████| 224/224 [00:00<00:00, 4753.26it/s]
+dinov2reg_tuned_mt_s2: pole reliance +2.633 | aoc_att 6.727 aoc_rollout 3.067 aoc_chefer 8.519 aoc_gradcam 0.138 aoc_random 0.254 | box_att 0.484 box_rollout 0.100 box_chefer 0.443 box_gradcam 0.067
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4921.03it/s]

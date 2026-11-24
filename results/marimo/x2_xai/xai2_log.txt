@@ -4,3 +4,5 @@ images: 143 | with 5 random boxes: 137
 Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4040.16it/s]
 dinov2_tuned_cls_s0: pole reliance +2.697 | aoc_att 5.532 aoc_rollout 3.201 aoc_chefer 6.262 aoc_gradcam 0.314 aoc_random 0.356 | box_att 0.467 box_rollout 0.098 box_chefer 0.374 box_gradcam 0.048
 Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4323.66it/s]
+dinov2_tuned_cls_s1: pole reliance +1.426 | aoc_att 3.979 aoc_rollout 2.218 aoc_chefer 4.789 aoc_gradcam 0.486 aoc_random 0.241 | box_att 0.362 box_rollout 0.099 box_chefer 0.310 box_gradcam 0.086
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4062.82it/s]

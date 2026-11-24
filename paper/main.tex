@@ -27,10 +27,10 @@
 
 \title{A Controlled, Pre-specified Evaluation of Multi-task Learning\\ for Utility-Pole Lean Assessment}
 
-% ---- authors: to be completed by the authors (kept as placeholders on purpose) ----
-\author[1]{Author One\thanks{Corresponding author: \texttt{author.one@example.org}}}
-\author[1]{Author Two}
-\affil[1]{Department, University, City, Country}
+\author[1]{Mahdi Mohammadiha}
+\author[1,*]{Mahdi Bahaghighat}
+\affil[1]{Department of Computer Engineering, Imam Khomeini International University, Qazvin, Iran}
+\affil[*]{Corresponding author: \texttt{bahaghighat@eng.ikiu.ac.ir}}
 \date{}
 
 \begin{document}
@@ -57,7 +57,7 @@ with shuffled angles or uniform smoothing of the same mass do equally well, so t
 smoothing rather than from geometry. Finally, an explainability test shows that both models already attend to
 the pole and that keypoint supervision does not make this attention more pole-focused, while the backbone with the most pole-focused attention is
 the less accurate one. The joint model still predicts the pole axis (mean angle error $0.97^\circ$) at no
-cost in accuracy. Code, checkpoints and all per-image predictions are released.
+cost in accuracy. Code and all per-image predictions are released.
 \end{abstract}
 
 \noindent\textbf{Keywords:} power distribution inspection; utility pole; multi-task learning; vision transformer;
@@ -86,42 +86,27 @@ In this paper we ask whether the keypoints help the \emph{classifier}. We train 
 with a classification head and an auxiliary keypoint head (multi-task learning, \citealp{caruana1997multitask})
 and compare it with the same network trained for classification only. Because the test set is small (227
 images) and fine-tuning large transformers is noisy, a naive comparison can easily produce a spurious
-``improvement''. We therefore treat the study as a controlled evaluation:
-\begin{itemize}
-  \item both variants receive the same hyper-parameter search budget, tuned on validation data only;
-  \item every configuration is trained with several seeds, and the test split is evaluated once;
-  \item differences are reported with paired bootstrap confidence intervals and exact McNemar tests, with
-        Holm correction within each family of comparisons;
-  \item each follow-up hypothesis, its prediction and its decision rule were written to a public,
-        time-stamped repository before the corresponding runs, and every outcome is reported.
-\end{itemize}
+``improvement''. We therefore treat the study as a controlled evaluation. Both variants receive the same
+hyper-parameter search budget on validation data, every configuration is trained with several seeds, the test
+split is evaluated once, and differences are reported with paired bootstrap confidence intervals and exact
+McNemar tests with Holm correction. Each follow-up hypothesis, with its prediction and decision rule, was
+written to a public, time-stamped repository before the corresponding runs, and every outcome is reported.
 
-The study is organised around four research questions:
-\begin{description}
-  \item[RQ1] Does an auxiliary keypoint loss improve lean classification once both models are tuned fairly?
-  \item[RQ2] What limits classification accuracy on this dataset?
-  \item[RQ3] Can the keypoint geometry be used in other ways, through the data regime, through augmentation,
-             or through angle-aware training targets, to improve accuracy or calibration?
-  \item[RQ4] Does keypoint supervision change \emph{where} the classifier looks?
-\end{description}
+Beyond the main comparison, we look at what limits accuracy on this dataset, whether the keypoint geometry
+helps in other ways (with less training data, with stronger augmentation, or as angle-aware training
+targets), and whether keypoint supervision changes where the classifier looks.
 
-Our contributions are:
-\begin{enumerate}
-  \item \textbf{A leakage-free protocol for multi-task use of PD-Defect.} The keypoint split of the dataset
-        contains 125 of the 227 classification-test images (113 identical, 12 re-cropped copies). We document
-        this and use keypoints only for classification-training images (\cref{sec:leakage}).
-  \item \textbf{A label analysis with ground-truth angles.} The binary label follows an implicit threshold of
-        $\approx 3^\circ$. Current models are within about one point of the label-consistency ceiling on
-        Leaned vs.\ Straight, and errors concentrate in the 2--$6^\circ$ band (\cref{sec:labels}).
-  \item \textbf{A controlled negative result.} After equal-budget tuning, keypoint supervision does not change
-        Macro-F1 on DINOv2 or DINOv2-with-registers, with less training data, or with stronger photometric
-        augmentation (\cref{sec:main,sec:h1,sec:h3}).
-  \item \textbf{Angle-aware soft targets with proper controls.} Soft targets improve calibration, but an
-        angle-shuffled and a uniform-smoothing control show that the gain is due to smoothing, not to the
-        angle (\cref{sec:h2}).
-  \item \textbf{A quantitative explainability test.} Both models attend to the pole, but keypoint supervision
-        does not make attention more pole-focused, and better pole-focused attention does not go with higher accuracy (\cref{sec:xai}).
-\end{enumerate}
+The answers form a consistent picture. We first show that the keypoint split of PD-Defect contains 125 of the
+227 classification-test images, so that combining the two tasks naively leaks test data, and we use a
+leakage-free protocol throughout (\cref{sec:leakage}). Ground-truth axis angles then reveal that the binary
+label follows an implicit threshold of about $3^\circ$, that current models are within about one point of the
+resulting label-consistency ceiling on Leaned vs.\ Straight, and that errors concentrate in the 2--$6^\circ$
+band (\cref{sec:labels,sec:errors}). After equal-budget tuning, keypoint supervision does not change Macro-F1
+on DINOv2 or DINOv2 with registers, nor with less training data or stronger photometric augmentation
+(\cref{sec:main,sec:h1,sec:h3}). Angle-aware soft targets improve calibration, but controls with shuffled
+angles and with uniform smoothing show that this gain comes from smoothing rather than from the angle
+(\cref{sec:h2}). Finally, both models attend to the pole, keypoint supervision does not make this attention
+more pole-focused, and better pole-focused attention does not go with higher accuracy (\cref{sec:xai}).
 
 % =====================================================================================================
 \section{Related work}
@@ -185,11 +170,12 @@ the pole axis. Only the official classification split is used for training, mode
 The keypoint part has its own train / validation / test split, and the two parts share images. Matching
 file stems and comparing pixels shows that 1676 classification images also appear in the keypoint part.
 1564 of these are the same photograph re-encoded (maximum mean absolute difference 0.14/255), and 112 are
-re-cropped versions with a different size. Crucially, \textbf{125 classification-test images and 189
-classification-validation images are in the keypoint training split}. A content-based check that ignores
+re-cropped versions with a different size. Crucially, 125 classification-test images and 189
+classification-validation images are in the keypoint training split. A content-based check that ignores
 file names (32$\times$32 thumbnails) confirms that 113 of the 125 test images are near-identical to a
 keypoint-training image, and the remaining 12 are re-cropped or slightly rotated copies of the same photograph
-(\cref{fig:leakage}); no renamed duplicates were found. Any method that pre-trains or co-trains a keypoint
+(\cref{fig:leakage}, which shows an identical image, a re-cropped copy and a re-cropped and slightly
+rotated copy); no renamed duplicates were found. Any method that pre-trains or co-trains a keypoint
 model on the keypoint training split would therefore have seen more than half of the classification test set.
 
 This leakage is between tasks, not within either task's own benchmark, so the dataset authors' separately
@@ -200,9 +186,7 @@ with the opposite label.
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.5\linewidth]{leakage_examples}
-  \caption{Cross-task leakage in PD-Defect. Top: classification-test images; bottom: the corresponding images
-  in the keypoint-training split. (a) identical image; (b) re-cropped copy; (c) re-cropped and slightly rotated
-  copy. Of the 125 affected test images, 113 are identical and 12 are modified copies of the same photograph.}
+  \caption{Examples of cross-task leakage. Top: classification test split; bottom: keypoint training split.}
   \label{fig:leakage}
 \end{figure}
 
@@ -219,22 +203,20 @@ For images with keypoints we compute the ground-truth (GT) axis angle from verti
 $\theta = \operatorname{atan2}(|x_t - x_b|\,W,\; |y_t - y_b|\,H)$, where $(x_b, y_b)$ and $(x_t, y_t)$ are the
 normalised bottom and top keypoints and $W \times H$ is the image size.
 
-\Cref{fig:anglehist} shows the distribution of $\theta$ by class on the training split. No Straight pole has
+\Cref{fig:anglehist} shows the distribution of $\theta$ by class for the 1149 training images with keypoints
+(757 Straight, 392 Leaned; angles above $20^\circ$ are collected in the last bin). No Straight pole has
 $\theta > 10^\circ$, but 16.8\% of Leaned poles have $\theta < 3^\circ$. The median angle is $6.1^\circ$ for
 Leaned and $1.0^\circ$ for Straight. A single threshold fitted on training data, $3.03^\circ$, reproduces the
 binary label for 90.9\% of training, 93.1\% of validation and 91.6\% of test images with keypoints. The
 $10^\circ$ rule used by \citet{masabathula2026smartphone} reproduces only 77.6\% of the test labels, even with
-GT keypoints. The annotators therefore applied an implicit threshold of about $3^\circ$, with a band of
+GT keypoints. The two thresholds are marked in \cref{fig:anglehist} (solid and dashed). The annotators therefore applied an implicit threshold of about $3^\circ$, with a band of
 genuine disagreement around it. Since the GT-angle rule reaches 91.6\% on Leaned vs.\ Straight, this is a
 practical upper bound for any image-based model that has to reproduce these labels.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.6\linewidth]{label_angle_hist}
-  \caption{Ground-truth axis angle from vertical by class, for the training images with keypoints (757
-  Straight, 392 Leaned; angles above $20^\circ$ are shown in the last bin). Solid line: the threshold of
-  $3.03^\circ$ fitted on training data; dashed line: the $10^\circ$ rule of prior work. The label follows an
-  implicit threshold near $3^\circ$.}
+  \caption{Ground-truth axis angle by class (training images with keypoints).}
   \label{fig:anglehist}
 \end{figure}
 
@@ -271,8 +253,7 @@ sigmoid, giving normalised coordinates $(x_b, y_b, x_t, y_t)$. Register tokens a
   \draw[arr] (bb.east) ++(0,-3mm) -- (xa.west);
   \draw[arr] (xa) -- (kh); \draw[arr] (kh) -- (kp);
 \end{tikzpicture}}
-\caption{The multi-task network. The \cls{} variant is trained with $\mathcal{L}_{\mathrm{cls}}$ only (the
-keypoint head is present but receives no gradient); the \mt{} variant adds $\lambda\,\mathcal{L}_{\mathrm{kp}}$.}
+\caption{The multi-task network.}
 \label{fig:model}
 \end{figure}
 
@@ -285,7 +266,8 @@ normalised coordinates, averaged over the images of the batch that have keypoint
   \frac{\sum_i m_i \, \tfrac{1}{4}\sum_{j=1}^{4} \mathrm{SmoothL1}(\hat{k}_{ij} - k_{ij})}{\sum_i m_i},
 \end{equation}
 where $m_i \in \{0, 1\}$ indicates a valid keypoint label. We call the model trained with
-$\mathcal{L}_{\mathrm{cls}}$ only \cls{} and the joint model \mt{}. Two further variants that feed the
+$\mathcal{L}_{\mathrm{cls}}$ only \cls{} (its keypoint head is present but receives no gradient) and the joint
+model \mt{}. Two further variants that feed the
 predicted axis geometry into the classifier (\texttt{mt\_geo}, with and without gradient through the
 keypoints) were evaluated at default settings only and are reported in Appendix~\ref{app:default}.
 
@@ -306,13 +288,10 @@ $-\sum_i \sum_c w_c t_{ic} \log \hat{p}_{ic} / \sum_i \sum_c w_c t_{ic}$, which 
 one-hot targets. On average, the soft targets move 0.089 of the mass off the annotated class (0.099 for
 Leaned and 0.084 for Straight).
 
-Two controls use the same images and the same target mass but no per-image angle information:
-\begin{itemize}
-  \item \emph{shuffled angle}: \cref{eq:soft} with the angles randomly permuted among the eligible images of
-        the same class, which keeps the per-class distribution of targets identical;
-  \item \emph{uniform smoothing}: every eligible image moves the class-wise mean mass (0.099 or 0.084) from its
-        label to the other of the two lean classes.
-\end{itemize}
+Two controls use the same images and the same target mass but no per-image angle information. The
+shuffled-angle control applies \cref{eq:soft} with the angles randomly permuted among the eligible images of
+the same class, which keeps the per-class distribution of targets identical. The uniform-smoothing control moves
+the class-wise mean mass (0.099 or 0.084) of every eligible image from its label to the other lean class.
 
 \subsection{Training and model selection}
 We use AdamW \citep{loshchilov2019adamw} (weight decay 0.05), separate learning rates for the backbone and the
@@ -342,8 +321,9 @@ negative log-likelihood (NLL) and the expected calibration error (ECE, 15 equal-
 \subsection{Pre-specification}
 After the main experiments (\cref{sec:main}), each follow-up hypothesis was written to the public repository
 before its runs, together with its intervention, primary and secondary outcomes, predicted direction, and,
-where relevant, a decision rule. This applies to H1 (photometric augmentation), H3 (data efficiency), H2
-(soft targets), H2b (replication and controls) and X1 (explainability). The time-stamped commit history shows
+where relevant, a decision rule. This applies to the experiments on photometric augmentation, reduced training
+data, soft targets (including their replication and controls) and explainability. The time-stamped commit
+history shows
 the order of design and results; the single amendment made after a code check is reported in \cref{sec:xai}.
 The main comparison and the diagnostic analyses of \cref{sec:labels,sec:errors} were not pre-specified.
 
@@ -361,11 +341,16 @@ seed: at the default configuration its two search seeds differ by 17 points (70.
 variant stays within 81.8--85.1. On DINOv2 with registers, \cls{} selects the default configuration and \mt{}
 a configuration with $\lambda = 1$ and 25 epochs; all configurations lie within 81.6--84.6 for both variants.
 
-\Cref{tab:main} shows the tuned models. Keypoint supervision changes Macro-F1 by $+1.23$ points on DINOv2 and
+\Cref{tab:main} shows the tuned models (mean $\pm$ standard deviation over seeds 0--2; the last column is
+the Macro-F1 of the seed-majority vote, and the lower part gives the \mt{} $-$ \cls{} difference with its paired
+bootstrap 95\% confidence interval and the Holm-adjusted McNemar $p$). Keypoint supervision changes Macro-F1 by $+1.23$ points on DINOv2 and
 by $-1.34$ points on DINOv2 with registers; both confidence intervals contain zero (\cref{fig:forest}). At
 default settings, before tuning, the same comparison gave $+4.63$ [$+1.98, +7.46$] and $-3.71$
 [$-6.61, -0.99$] (Appendix~\ref{app:default}), so the apparently large effects were caused by untuned
-hyper-parameters, not by the auxiliary task.
+hyper-parameters, not by the auxiliary task. \Cref{fig:forest} summarises all effects of this study on
+test Macro-F1; its four groups correspond, from top to bottom, to this section and to
+\cref{sec:h1,sec:h3,sec:h2}. Only the comparison of soft targets with uniform smoothing has an interval above
+zero, and it is not significant under McNemar with Holm correction.
 
 Run-to-run variation is of the same size as these effects. For DINOv2 with registers, the search selected the
 default configuration for \cls{}, so the final runs repeated exactly an earlier training setting with the same
@@ -379,9 +364,7 @@ the DINOv3 weights are gated. We make no claim of outperforming it.
 
 \begin{table}[t]
 \centering
-\caption{Tuned models on the official test split (227 images); mean $\pm$ std over seeds 0--2. The last
-column is the Macro-F1 of the seed-majority vote. $\Delta$: \mt{} $-$ \cls{} Macro-F1 with paired bootstrap
-95\% CI and Holm-adjusted McNemar $p$.}
+\caption{Tuned models on the test split.}
 \label{tab:main}
 \small
 \resizebox{\linewidth}{!}{%
@@ -409,24 +392,21 @@ DINOv2-reg: \mt{} $-$ \cls{} & $-1.34$ [$-3.93, +1.15$] & 0.24 (0.71) \\
 \end{tabular}
 
 \vspace{1mm}
-\footnotesize $^\dagger$Reported on the dataset card; not reproduced (gated weights).
+\footnotesize $^\dagger$Reported on the dataset card.
 \end{table}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.62\linewidth]{effects_forest}
-  \caption{Test-set effects on Macro-F1 (points), with paired bootstrap 95\% confidence intervals. From top to
-  bottom: keypoint supervision after tuning (\cref{sec:main}); photometric augmentation, H1 (\cref{sec:h1});
-  keypoint supervision with 10--50\% of the training data, H3 (\cref{sec:h3}); soft targets against hard targets
-  and against the shuffled-angle and uniform-smoothing controls, H2b (\cref{sec:h2}). Only soft vs.\ uniform
-  has an interval above zero, and it is not significant under McNemar with Holm correction.}
+  \caption{Effects on test Macro-F1 with paired bootstrap 95\% confidence intervals.}
   \label{fig:forest}
 \end{figure}
 
 \subsection{Where do the errors come from?}
 \label{sec:errors}
-\Cref{fig:errangle} breaks the test errors on Leaned / Straight images down by GT angle. Outside
-2--$6^\circ$, errors are rare. Inside this band (37 images), the tuned models err on 20--28\% of the images, which
+\Cref{fig:errangle} breaks the test errors of the tuned DINOv2 models on Leaned / Straight images down by GT
+angle (mean over three seeds; the six bins contain 84, 27, 10, 9, 7 and 6 images). Outside
+2--$6^\circ$, errors are rare. Inside this band (37 images, shaded in the figure), the tuned models err on 20--28\% of the images, which
 is where the labels themselves are inconsistent (\cref{sec:labels}). On Leaned vs.\ Straight, the tuned DINOv2
 \mt{} model reaches 90.4\% accuracy, close to the 91.6\% of the GT-angle rule. The remaining headroom for
 Macro-F1 therefore lies mainly in the Rejected class (recall 77.5\% for \cls{} and 86.5\% for \mt{}) and in
@@ -444,18 +424,17 @@ decision rule, but the joint model provides an interpretable angle estimate at n
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.6\linewidth]{error_by_angle}
-  \caption{Test error rate on Leaned / Straight images with GT keypoints, by GT axis angle (tuned DINOv2, mean
-  over three seeds). The bins contain 84, 27, 10, 9, 7 and 6 images. Errors concentrate in the ambiguous
-  2--$6^\circ$ band (shaded).}
+  \caption{Test error rate by ground-truth axis angle.}
   \label{fig:errangle}
 \end{figure}
 
-\subsection{H1: photometric augmentation}
+\subsection{Photometric augmentation}
 \label{sec:h1}
 We hypothesised that the over-representation of dark images in Rejected acts as a shortcut, and that photometric
 augmentation (random gamma in $[0.5, 2]$ with $p = 0.5$; low-light simulation by scaling intensities by
 0.15--0.5 and adding Gaussian noise, $p = 0.25$) should raise the Rejected F1 and Macro-F1.
-The hypothesis is not supported (\cref{tab:h1}): Macro-F1 does not change, the Rejected F1 does not rise, and the
+The hypothesis is not supported (\cref{tab:h1}, DINOv2, seeds 0--2, differences to the base augmentation
+with paired bootstrap 95\% confidence intervals): Macro-F1 does not change, the Rejected F1 does not rise, and the
 false-Rejected rate on low-light Leaned / Straight test images (lowest quartile of mean grey value) stays at
 7.6\% for \cls{}. The association between darkness and Rejected is therefore not a simple intensity
 shortcut: low-light images are also blurred, back-lit or noisy, in ways that resemble genuinely unusable
@@ -463,8 +442,7 @@ images.
 
 \begin{table}[t]
 \centering
-\caption{H1: photometric augmentation (DINOv2, seeds 0--2). $\Delta$ vs.\ the base augmentation, with paired
-bootstrap 95\% CI. FR-dark: false-Rejected rate on low-light Leaned / Straight test images.}
+\caption{Effect of photometric augmentation. FR-dark: false-Rejected rate on low-light images.}
 \label{tab:h1}
 \small
 \begin{tabular}{lcccc}
@@ -479,12 +457,14 @@ model & Macro-F1 & $\Delta$ [95\% CI] & F1$_\mathrm{R}$ & FR-dark \\
 \end{tabular}
 \end{table}
 
-\subsection{H3: data efficiency}
+\subsection{Training with less data}
 \label{sec:h3}
 An auxiliary task may matter more when labelled data are scarce, so we predicted that the \mt{} $-$ \cls{}
 difference would be positive and grow as the training set shrinks. We trained on stratified 10, 25 and 50\%
 subsets of the training split (the same subset for \cls{} and \mt{} of a given seed), keeping the number of
-optimisation steps equal to the full-data runs. This was not the case (\cref{fig:dataeff}). The
+optimisation steps equal to the full-data runs. \Cref{fig:dataeff} shows the mean over three seeds and a band
+of $\pm$ one standard deviation for 170, 426, 853 and 1706 training images (log scale). The prediction was
+not confirmed. The
 learning curve is steep, from 83.5 to 68.8 Macro-F1 for \cls{}, with most of the loss in the Rejected F1 (80
 $\rightarrow$ 51), so the design had room to show an effect. Yet the difference stays within one point at every
 fraction ($-0.37$ [$-3.34, +2.51$] at 10\%, $-0.28$ [$-3.06, +2.40$] at 25\%, $-0.78$ [$-3.96, +2.45$] at
@@ -493,13 +473,11 @@ fraction ($-0.37$ [$-3.34, +2.51$] at 10\%, $-0.28$ [$-3.06, +2.40$] at 25\%, $-
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.6\linewidth]{data_efficiency}
-  \caption{H3: test Macro-F1 against the fraction of the training split used (170, 426, 853 and 1706 images;
-  log scale). Lines: mean over three seeds; bands: $\pm$ one standard deviation. The 100\% points are the tuned
-  models. Keypoint supervision gives no advantage at any data size.}
+  \caption{Test Macro-F1 against the amount of training data.}
   \label{fig:dataeff}
 \end{figure}
 
-\subsection{H2 and H2b: angle-aware soft targets}
+\subsection{Angle-aware soft targets}
 \label{sec:h2}
 We predicted that soft targets from the GT angle (\cref{sec:softtargets}) would raise Macro-F1,
 reduce errors in the 2--$6^\circ$ band and improve calibration. On seeds 0--2, every outcome moved in the
@@ -510,20 +488,23 @@ effects were smaller ($+0.44$ [$-2.49, +3.23$]).
 Because soft targets also act as label smoothing, we pre-specified a
 replication on new seeds (3--5) and the two controls of \cref{sec:softtargets} (seeds 0--5), with the decision
 rule that an angle-specific benefit would be claimed only if soft targets beat both controls in Macro-F1 with
-a confidence interval above zero. \Cref{tab:h2b} shows the results. The gain keeps its sign on the new seeds
+a confidence interval above zero. \Cref{tab:h2b} shows the results for \cls{} on DINOv2 over seeds 0--5
+(calibration averaged over seeds) and the Macro-F1 differences with paired bootstrap 95\% confidence
+intervals. The gain keeps its sign on the new seeds
 but shrinks to $+1.49$ [$-1.28, +4.44$]. Soft targets do not beat the shuffled-angle control ($+0.80$
 [$-1.33, +2.89$]), so the decision rule is not met, and the drop in band errors does not replicate on seeds
 3--5 (23.4\% $\rightarrow$ 27.0\%). The calibration gain is robust: NLL falls from 0.577 to 0.475 over six
 seeds, and from 0.545 to 0.489 on seeds 3--5 alone. However, both controls reach the same NLL and ECE
-(\cref{fig:reliability}). \textbf{The improvement in calibration is a property of softened targets, not of
-the angle information.} As an exploratory observation, heterogeneous soft targets (GT or shuffled angles)
+(\cref{fig:reliability}). The improvement in calibration is therefore a property of softened targets, not of
+the angle information. In the reliability diagram (all seeds pooled, eight equal-mass bins), hard targets are
+over-confident, with a pooled ECE of 9.3\%, whereas angle-aware soft targets (6.2\%) and uniform smoothing
+(5.8\%) lie close to the diagonal. As an exploratory observation, heterogeneous soft targets (GT or shuffled angles)
 tend to do better than uniform smoothing of the same mean mass ($+2.19$ [$+0.13, +4.35$] for soft vs.\
 uniform), but this is not significant under McNemar with Holm correction.
 
 \begin{table}[t]
 \centering
-\caption{H2b: soft targets and controls (\cls{}, DINOv2, seeds 0--5). Calibration is averaged over seeds.
-Bottom: Macro-F1 differences with paired bootstrap 95\% CI.}
+\caption{Soft targets and their controls.}
 \label{tab:h2b}
 \small
 \begin{tabular}{lcccc}
@@ -531,7 +512,7 @@ Bottom: Macro-F1 differences with paired bootstrap 95\% CI.}
 targets & Macro-F1 & NLL & ECE & error 2--$6^\circ$ \\
 \midrule
 hard                                 & 83.18 $\pm$ 1.13 & 0.577 & 10.1\% & 24.8\% \\
-soft, GT angle (H2)                  & 85.10 $\pm$ 1.98 & 0.475 & 7.5\%  & 22.1\% \\
+soft, GT angle                       & 85.10 $\pm$ 1.98 & 0.475 & 7.5\%  & 22.1\% \\
 soft, shuffled angle (control)       & 84.30 $\pm$ 1.66 & 0.476 & 6.4\%  & 20.7\% \\
 uniform smoothing (control)  & 82.91 $\pm$ 2.05 & 0.492 & 7.3\% & 24.3\% \\
 \bottomrule
@@ -553,13 +534,11 @@ soft $-$ uniform-smoothing control           & $+2.19$ [$+0.13, +4.35$] \\
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.46\linewidth]{reliability}
-  \caption{Reliability diagram of the \cls{} models on test (predictions of all seeds pooled; 8 equal-mass
-  bins; dashed: perfect calibration). Hard targets are over-confident (pooled ECE 9.3\%); angle-aware soft
-  targets (6.2\%) and uniform smoothing (5.8\%) are equally well calibrated.}
+  \caption{Reliability diagram of the \cls{} models on the test split.}
   \label{fig:reliability}
 \end{figure}
 
-\subsection{X1: does keypoint supervision change where the model looks?}
+\subsection{Where does the model look?}
 \label{sec:xai}
 Even without an accuracy gain, keypoint supervision might make the classifier rely more on the pole than
 classification-only training does.
@@ -576,25 +555,25 @@ primary metric was not changed.
 
 The hypothesis is not supported (\cref{tab:xai,fig:xai}). The Grad-CAM energy-in-box of DINOv2 \mt{} is
 slightly \emph{lower} than that of \cls{} ($-1.49$ [$-2.10, -0.92$] points, Wilcoxon $p < 0.001$), and it is
-unchanged on DINOv2 with registers ($+0.06$ [$-1.18, +1.27$]). The CLS attention gives the same picture. Two
-further observations are useful for practice:
-\begin{itemize}
-  \item The last-block Grad-CAM is diffuse: its energy-in-box is at chance level for all models, and its peak
-        falls inside the box in only 1--13\% of the images. The CLS attention, in contrast, concentrates on the
-        pole (38--55\% of the mass in a box covering 9\% of the image).
-  \item The clearest difference is between backbones, not between training regimes. DINOv2 shows 6--10
-        artifact tokens per image and DINOv2 with registers none, and the attention peak lies on the pole in
-        86--88\% of the images for DINOv2 with registers against 26--49\% for DINOv2. Yet DINOv2 with registers
-        is the less accurate backbone (\cref{tab:main}). Better-localised attention did not translate into
-        better lean classification.
-\end{itemize}
-These measures are correlational and say nothing about whether the model's decisions are caused by the pole
+unchanged on DINOv2 with registers ($+0.06$ [$-1.18, +1.27$]). The CLS attention gives the same picture.
+\Cref{tab:xai} reports the means over seeds 0--2 (``no art.'': artifact tokens removed; pointing: share of
+images whose attention peak lies in the box).
+
+Two further observations are useful for practice. The last-block Grad-CAM is diffuse: its energy-in-box is at
+chance level for all models, and its peak falls inside the box in only 1--13\% of the images. The CLS
+attention, in contrast, concentrates on the pole, with 38--55\% of the mass in a box that covers 9\% of the
+image. Moreover, the clearest difference is between backbones, not between training regimes. DINOv2 shows
+6--10 artifact tokens per image and DINOv2 with registers none, and the attention peak lies on the pole in
+86--88\% of the images for DINOv2 with registers against 26--49\% for DINOv2. Yet DINOv2 with registers is the
+less accurate backbone (\cref{tab:main}), so better-localised attention did not translate into better lean
+classification. \Cref{fig:xai} shows the maps of the seed-0 DINOv2 models for the first four images of a
+pre-specified random sample: the attention of both \cls{} and \mt{} follows the pole shaft (green box), the
+Grad-CAM of \cls{} is faint and diffuse, and the small hot spots in the image corners are artifact tokens. These measures are correlational and say nothing about whether the model's decisions are caused by the pole
 region \citep{adebayo2018sanity}.
 
 \begin{table}[t]
 \centering
-\caption{X1: relevance inside the GT pole box (143 test images; mean over seeds 0--2; chance level 9.1\%).
-``No art.'': artifact tokens removed. Pointing: share of images whose attention peak lies in the box.}
+\caption{Relevance inside the ground-truth pole box (chance level 9.1\%).}
 \label{tab:xai}
 \small
 \resizebox{\linewidth}{!}{%
@@ -614,10 +593,7 @@ DINOv2-reg \mt{}     & 10.9\% & 54.7\% & 54.7\% & 85.5\% & 0 \\
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{xai_examples}
-  \caption{Explanation maps for four test images drawn at random (the first four of a pre-specified random
-  sample; seed-0 DINOv2 models). Columns: input image; last-layer CLS attention of \cls{} and of \mt{};
-  Grad-CAM of \cls{}. Green: GT pole box. The attention follows the pole shaft in both models, while Grad-CAM
-  is faint and diffuse. Small hot spots in the image corners are artifact tokens.}
+  \caption{Attention and Grad-CAM maps for four randomly drawn test images.}
   \label{fig:xai}
 \end{figure}
 
@@ -638,34 +614,29 @@ explanation of the decision and can be compared with a utility's own tolerance.
 
 Calibration matters in practice. Softened targets reduced the test NLL by about 18\% and the ECE by a quarter. A better calibrated model can be
 used with a confidence threshold that sends uncertain images, typically those in the ambiguous band, to a
-human inspector. The H2b controls show that simple label smoothing achieves the same benefit, so practitioners
+human inspector. The controls show that simple label smoothing achieves the same benefit, so practitioners
 do not need angle annotations for this purpose.
 
 The backbone whose attention was most consistently on the pole was the less accurate one. Saliency maps should
 therefore not be used to select or justify models for this task without an accuracy evaluation.
 
 Finally, the study shows why rigour mattered. Without equal-budget tuning, the first experiments suggested large effects of keypoint supervision ($+4.6$ and
-$-3.7$ points) in opposite directions on two backbones. Without replication and controls, H2 would have
+$-3.7$ points) in opposite directions on two backbones. Without replication and controls, the first soft-target experiment would have
 suggested an angle-specific gain of $+2.3$ points. Both disappeared under controlled conditions. On test sets
 of a few hundred images, single-seed comparisons and untuned baselines are not sufficient.
 
 % =====================================================================================================
 \section{Limitations}
 \label{sec:limitations}
-\begin{itemize}
-  \item The study uses one dataset from one region; we know of no other public dataset with image-level lean
-        labels and axis keypoints. The conclusions may not hold for other annotation protocols.
-  \item The test set has 227 images, so effects of one to two points cannot be resolved. Our confidence
-        intervals make this explicit.
-  \item We compare two ViT-B backbones from one family. DINOv3, used for the dataset-card baseline, could not be
-        evaluated because its weights are gated.
-  \item Follow-up experiments reuse hyper-parameters tuned for the baseline, which may disadvantage the
-        interventions; we accepted this to keep the number of test evaluations small.
-  \item The explainability measures are correlational. Grad-CAM at the last block proved weak for these
-        models, and other attribution methods might behave differently.
-  \item Pre-specification was done in a public repository rather than in a formal registry, and the main
-        comparison was not pre-specified.
-\end{itemize}
+The study uses a single dataset from one region, and we know of no other public dataset with image-level lean
+labels and axis keypoints; the conclusions may not hold for other annotation protocols. With 227 test images,
+effects of one to two points cannot be resolved, which our confidence intervals make explicit. We compared two
+ViT-B backbones from one family, and DINOv3, used for the dataset-card baseline, could not be evaluated because
+its weights are gated. The follow-up experiments reuse hyper-parameters tuned for the baseline, which may
+disadvantage the interventions; we accepted this to keep the number of test evaluations small. The
+explainability measures are correlational, and last-block Grad-CAM proved weak for these models. Finally,
+pre-specification was done in a public repository rather than in a formal registry, and the main comparison
+was not pre-specified.
 
 % =====================================================================================================
 \section{Conclusion}
@@ -677,29 +648,36 @@ model's attention more pole-focused than classification-only training. The bindi
 $3^\circ$ threshold with an ambiguous band around it. Softened targets improve calibration, but plain
 smoothing does the same. We also identified a cross-task leakage in the dataset that affects more than half
 of the classification test set for any method that uses the keypoint split, and we provide a leakage-free
-protocol, code, checkpoints and per-image predictions to support further work.
+protocol, code and per-image predictions to support further work.
 
 % =====================================================================================================
 \section*{Data and code availability}
 PD-Defect is available under CC BY 4.0 \citep{pddefect_data}. Code, analysis scripts, all per-run and
-per-image results and the pre-specification history: \todo{repository URL}.\\
-Fine-tuned checkpoints: \url{https://huggingface.co/northlattice/pd-defect-pole-lean-checkpoints}.
+per-image results and the pre-specification history are available at \todo{repository URL}.
 
 \section*{Acknowledgements}
-\todo{to be completed by the authors.}
+We thank the creators of PD-Defect for releasing the dataset under an open licence. \todo{Funding statement,
+or ``This research received no specific grant from any funding agency.''}
 
 \section*{Use of AI assistance}
-\todo{Describe the use of AI assistance in the analysis and writing.}
+During this study the first author used Claude, an AI assistant developed by Anthropic, as a research
+assistant. Under the authors' direction, it searched the literature, wrote and ran the experiment and analysis
+code, proposed experimental designs that the authors reviewed and approved before they were run, performed the
+statistical analyses, produced the figures and drafted the text of the manuscript. No other AI tool was used.
+The authors checked the results and the text and take full responsibility for the content of this article.
 
 \appendix
 \renewcommand{\thetable}{\Alph{section}.\arabic{table}}
 \section{Results at default hyper-parameters}
 \label{app:default}
+\Cref{tab:default} reports the test results (mean $\pm$ standard deviation over seeds 0--2) with the default
+hyper-parameters: backbone learning rate $2 \times 10^{-5}$, head learning rate $10^{-3}$, 15 epochs and
+$\lambda = 5$.
 
-\begin{table}[h]
+\begin{table}[!ht]
 \centering
-\caption{Default hyper-parameters (backbone learning rate $2 \times 10^{-5}$, head learning rate $10^{-3}$, 15
-epochs, $\lambda = 5$), test split, mean $\pm$ std over seeds 0--2.}
+\caption{Test results at default hyper-parameters.}
+\label{tab:default}
 \small
 \begin{tabular}{llcc}
 \toprule
@@ -721,11 +699,14 @@ DINOv2 with registers; feeding the predicted geometry to the classifier lowers M
 
 \section{Hyper-parameter search}
 \label{app:search}
+\Cref{tab:search} lists the validation Macro-F1 of each configuration (mean over the two search seeds).
+Configuration 7 was selected for both variants on DINOv2; on DINOv2 with registers, configuration 0 was
+selected for \cls{} and configuration 4 for \mt{}.
 
-\begin{table}[h]
+\begin{table}[!ht]
 \centering
-\caption{Equal-budget search: validation Macro-F1, mean over two search seeds. Configuration 7 was selected for
-both variants on DINOv2; on DINOv2-reg, configuration 0 for \cls{} and 4 for \mt{}.}
+\caption{Validation Macro-F1 of the equal-budget search.}
+\label{tab:search}
 \small
 \begin{tabular}{cccccccc}
 \toprule

@@ -217,6 +217,34 @@ def fig_xai(root):
     plt.close(fig); print("saved xai_examples")
 
 
+def fig_xai2(root):
+    """pre-registered X2 figure: most faithful method (Chefer), same 4 random images as X1, three models."""
+    z = np.load(f"{R}/x2_xai/xai2_maps.npz")
+    rows = json.load(open(f"{R}/xai_x1/xai_rows.json"))
+    boxes = {os.path.basename(p): (p, v) for p, v in gt_boxes(root).items()}
+    files = sorted({r["file"] for r in rows if r["tag"] == "dinov2_tuned_cls" and r["seed"] == 0})
+    sel = [files[i] for i in np.random.default_rng(0).choice(len(files), 8, replace=False)][:4]
+    T = 400; models = ["dinov2_tuned_cls_s0", "dinov2_tuned_mt_s0", "dinov2reg_tuned_cls_s0"]
+    titles = ["Image", "DINOv2 cls", "DINOv2 mt", "DINOv2-reg cls"]
+    fig, axs = plt.subplots(len(sel), 4, figsize=(COL2 * 0.8, COL2 * 0.8 * len(sel) / 4 * 1.02))
+    for i, f in enumerate(sel):
+        p, (y, box) = boxes[f]
+        im = Image.open(p).convert("RGB").resize((T, T), Image.BICUBIC)
+        for j in range(4):
+            ax = axs[i, j]
+            if j == 0:
+                ax.imshow(im)
+            else:
+                m = z[f"{models[j - 1]}|{f}|chefer"].astype(np.float32)
+                ax.imshow(overlay(im, m / (m.max() + 1e-12), box, T))
+            _clean(ax)
+            if i == 0:
+                ax.set_title(titles[j], fontsize=9, pad=4)
+    plt.subplots_adjust(wspace=0.025, hspace=0.025)
+    fig.savefig(f"{OUT}/xai_examples.png", dpi=300, bbox_inches="tight"); fig.savefig(f"{OUT}/xai_examples.pdf", dpi=300, bbox_inches="tight")
+    plt.close(fig); print("saved xai_examples (Chefer, X2)")
+
+
 def fig_leakage(root):
     pairs = ["1139", "2316", "1290"]    # identical / re-cropped / re-cropped and rotated
     T = 420
@@ -244,4 +272,4 @@ if __name__ == "__main__":
     setup_style(a.font)
     os.makedirs(OUT, exist_ok=True)
     fig_forest(); fig_data_efficiency(); fig_reliability(); fig_error_by_angle()
-    fig_label_angle(build_gt(a.root)); fig_xai(a.root); fig_leakage(a.root)
+    fig_label_angle(build_gt(a.root)); fig_xai2(a.root); fig_leakage(a.root)

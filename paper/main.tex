@@ -54,9 +54,10 @@ loss does not change classification quality on either backbone ($+1.2$ and $-1.3
 confidence intervals containing zero), nor with 10--50\% of the training data, nor with stronger photometric
 augmentation. Angle-aware soft targets improve calibration (test NLL $0.58 \rightarrow 0.48$), but controls
 with shuffled angles or uniform smoothing of the same mass do equally well, so the gain comes from target
-smoothing rather than from geometry. Finally, an explainability test shows that both models already attend to
-the pole and that keypoint supervision does not make this attention more pole-focused, while the backbone with the most pole-focused attention is
-the less accurate one. The joint model still predicts the pole axis (mean angle error $0.97^\circ$) at no
+smoothing rather than from geometry. Finally, saliency and occlusion analyses show that every model relies causally on the pole
+(blurring it flips about half of the predictions) and also on its surroundings; keypoint supervision increases
+this reliance only for DINOv2 with registers, and the backbone whose attention is most pole-focused is the less
+accurate one. The joint model still predicts the pole axis (mean angle error $0.97^\circ$) at no
 cost in accuracy. Code and all per-image predictions are released.
 \end{abstract}
 
@@ -105,8 +106,9 @@ band (\cref{sec:labels,sec:errors}). After equal-budget tuning, keypoint supervi
 on DINOv2 or DINOv2 with registers, nor with less training data or stronger photometric augmentation
 (\cref{sec:main,sec:h1,sec:h3}). Angle-aware soft targets improve calibration, but controls with shuffled
 angles and with uniform smoothing show that this gain comes from smoothing rather than from the angle
-(\cref{sec:h2}). Finally, both models attend to the pole, keypoint supervision does not make this attention
-more pole-focused, and better pole-focused attention does not go with higher accuracy (\cref{sec:xai}).
+(\cref{sec:h2}). Finally, saliency and occlusion analyses show that all models rely on the pole and on its
+surroundings, that keypoint supervision increases the reliance on the pole only for one of the two backbones,
+and that better pole-focused attention does not go with higher accuracy (\cref{sec:xai}).
 
 % =====================================================================================================
 \section{Related work}
@@ -142,9 +144,10 @@ smoothing of the same mass.
 
 For transformers, gradient-based maps such as Grad-CAM \citep{selvaraju2017gradcam}, raw or rolled-out attention
 \citep{abnar2020attention} and relevance propagation \citep{chefer2021transformer} are common, but saliency
-maps can be insensitive to the model \citep{adebayo2018sanity}. We therefore use them only in a pre-specified,
-quantitative test (energy inside a ground-truth box and the pointing game, \citealp{zhang2018excitation}) and
-draw no causal conclusions.
+maps can be insensitive to the model \citep{adebayo2018sanity}. We therefore combine them with an occlusion test, which
+measures how the prediction changes when a region is removed, and we evaluate the maps themselves by a deletion
+test and a sanity check, in addition to the energy inside a ground-truth box and the pointing game
+\citep{zhang2018excitation}.
 
 Finally, leakage between training and test data is a frequent source of over-optimistic results
 \citep{kapoor2023leakage}. Seed and data-order variance can be as large as the effects being reported
@@ -541,35 +544,25 @@ soft $-$ uniform-smoothing control           & $+2.19$ [$+0.13, +4.35$] \\
 \subsection{Where does the model look?}
 \label{sec:xai}
 Even without an accuracy gain, keypoint supervision might make the classifier rely more on the pole than
-classification-only training does.
-For the 143 Leaned / Straight test images with a GT pole box, we computed (i) Grad-CAM at the input of the last
-transformer block (ReLU of the gradient-weighted activations of the predicted class, per patch token) and (ii)
-the last-layer attention of the CLS token, averaged over heads, on patch tokens only. The primary metric is the
-share of Grad-CAM relevance inside the GT box (``energy-in-box''); the chance level is the box's share of the
-image, 9.1\% on average. Secondary metrics are the attention energy-in-box and the pointing-game hit rate.
+classification-only training does. We examined this in two pre-specified steps on the 143 Leaned / Straight
+test images that have a GT pole box, using the 18 checkpoints of the tuned DINOv2 and DINOv2-with-registers
+models and of the soft-target models.
 
-One amendment was made: a code check on four images, made before the full run and without comparing models, showed
-hot spots on a few high-norm background tokens, the artifact tokens described by \citet{darcet2024registers}.
-We therefore added a variant that excludes tokens whose pre-LayerNorm norm exceeds three times the median. The
-primary metric was not changed.
-
-The hypothesis is not supported (\cref{tab:xai,fig:xai}). The Grad-CAM energy-in-box of DINOv2 \mt{} is
-slightly \emph{lower} than that of \cls{} ($-1.49$ [$-2.10, -0.92$] points, Wilcoxon $p < 0.001$), and it is
-unchanged on DINOv2 with registers ($+0.06$ [$-1.18, +1.27$]). The CLS attention gives the same picture.
-\Cref{tab:xai} reports the means over seeds 0--2 (``no art.'': artifact tokens removed; pointing: share of
-images whose attention peak lies in the box).
-
-Two further observations are useful for practice. The last-block Grad-CAM is diffuse: its energy-in-box is at
-chance level for all models, and its peak falls inside the box in only 1--13\% of the images. The CLS
-attention, in contrast, concentrates on the pole, with 38--55\% of the mass in a box that covers 9\% of the
-image. Moreover, the clearest difference is between backbones, not between training regimes. DINOv2 shows
-6--10 artifact tokens per image and DINOv2 with registers none, and the attention peak lies on the pole in
-86--88\% of the images for DINOv2 with registers against 26--49\% for DINOv2. Yet DINOv2 with registers is the
-less accurate backbone (\cref{tab:main}), so better-localised attention did not translate into better lean
-classification. \Cref{fig:xai} shows the maps of the seed-0 DINOv2 models for the first four images of a
-pre-specified random sample: the attention of both \cls{} and \mt{} follows the pole shaft (green box), the
-Grad-CAM of \cls{} is faint and diffuse, and the small hot spots in the image corners are artifact tokens. These measures are correlational and say nothing about whether the model's decisions are caused by the pole
-region \citep{adebayo2018sanity}.
+The first step used saliency maps. We computed Grad-CAM at the input of the last transformer block (ReLU of the
+gradient-weighted activations of the predicted class, per patch token) and the last-layer attention of the
+CLS token, averaged over heads, and measured the share of each map inside the GT box (``energy-in-box''); the
+chance level is the box's share of the image, 9.1\% on average. One amendment was made before the full run: a
+code check on four images showed hot spots on a few high-norm background tokens, the artifact tokens described
+by \citet{darcet2024registers}, so we added a variant that excludes tokens whose pre-LayerNorm norm exceeds three
+times the median. The primary metric, Grad-CAM energy-in-box, did not support the hypothesis: it is slightly
+\emph{lower} for DINOv2 \mt{} than for \cls{} ($-1.49$ [$-2.10, -0.92$] points, Wilcoxon $p < 0.001$) and
+unchanged for DINOv2 with registers ($+0.06$ [$-1.18, +1.27$]). The CLS attention gives the same picture
+(\cref{tab:xai}, means over seeds 0--2; ``no art.'': artifact tokens removed; pointing: share of images whose
+attention peak lies in the box). The attention concentrates on the pole for all models, with 38--55\% of the
+mass in a box that covers 9\% of the image, whereas the last-block Grad-CAM is at chance level and its peak
+falls inside the box in only 1--13\% of the images. DINOv2 shows 6--10 artifact tokens per image and DINOv2 with
+registers none, and the attention peak lies on the pole in 86--88\% of the images for DINOv2 with registers
+against 26--49\% for DINOv2.
 
 \begin{table}[t]
 \centering
@@ -590,10 +583,82 @@ DINOv2-reg \mt{}     & 10.9\% & 54.7\% & 54.7\% & 85.5\% & 0 \\
 \end{tabular}}
 \end{table}
 
+Saliency maps are correlational and can be insensitive to the model \citep{adebayo2018sanity}, so the second
+step asked directly whether the decision depends on the pole. We replaced the pole box by a strongly blurred
+version of the image (Gaussian, radius 24 pixels at $448 \times 448$) and measured the drop in log-probability
+of the originally predicted class; the same was done for five boxes of the same size placed at random without
+overlap with the pole. \emph{Pole reliance} is the drop for the pole minus the mean drop for the random boxes.
+For 137 of the 143 images, five such boxes could be placed; the other six, with very large poles, were excluded
+from this metric as specified in advance. \Cref{tab:occlusion} shows the result, with means over seeds 0--2 and
+accuracy computed on these 143 images.
+
+\begin{table}[t]
+\centering
+\caption{Occlusion test.}
+\label{tab:occlusion}
+\small
+\begin{tabular}{lccccc}
+\toprule
+ & & \multicolumn{2}{c}{prediction flips when blurred} & \multicolumn{2}{c}{accuracy} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+model & pole reliance & pole & random box & intact & pole only \\
+\midrule
+DINOv2 \cls{}       & 1.87 & 49.2\% & 1.8\% & 90.0\% & 49.9\% \\
+DINOv2 \mt{}        & 2.01 & 49.4\% & 3.2\% & 89.3\% & 43.8\% \\
+DINOv2 soft \cls{}  & 1.64 & 52.0\% & 2.1\% & 91.4\% & 47.3\% \\
+DINOv2 soft \mt{}   & 1.71 & 51.7\% & 2.4\% & 89.7\% & 49.4\% \\
+DINOv2-reg \cls{}   & 2.26 & 49.4\% & 2.1\% & 88.1\% & 53.4\% \\
+DINOv2-reg \mt{}    & 2.58 & 45.9\% & 1.8\% & 87.9\% & 55.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All models depend strongly and causally on the pole: blurring it flips about half of the predictions, while
+blurring a random region of the same size flips 2--3\%. The pre-specified comparison of \mt{} with \cls{} (paired
+over images, Holm over the two backbones) shows a higher pole reliance for \mt{} on DINOv2 with registers
+($+0.33$ [$+0.08, +0.58$], Wilcoxon $p = 0.003$, Holm $p = 0.005$) and a smaller, non-significant increase on
+DINOv2 ($+0.14$ [$-0.04, +0.32$], $p = 0.32$), so the prediction is only partly supported. Among the secondary
+comparisons, soft targets \emph{reduce} pole reliance ($-0.30$ [$-0.49, -0.11$] for \mt{}, Holm $p = 0.002$;
+$-0.23$ [$-0.42, -0.04$] for \cls{}, Holm $p = 0.08$), consistent with less confident decisions. DINOv2 with
+registers tends to rely more on the pole than DINOv2 ($+0.38$ for \cls{} and $+0.57$ for \mt{}, bootstrap
+intervals above zero), but these differences are not significant after Holm correction. Keeping \emph{only} the
+pole and blurring everything else reduces accuracy from about 89\% to 44--55\%, so the surroundings matter as
+well. A plausible reason is that buildings and the horizon supply a vertical reference for judging lean, although
+heavy blurring also moves the images away from the training distribution.
+
+Finally, we compared the attribution methods themselves (\cref{tab:attribution}). Faithfulness was measured by
+a deletion test: patches are blurred in the order given by each map, in ten steps up to half of the image, and
+the mean drop in log-probability of the predicted class is compared with a random order (all models pooled,
+paired over images). A sanity check re-initialised the classification head and the last four blocks of one
+model and correlated the maps before and after (median Spearman correlation; a high value means that the map
+hardly depends on the trained weights). The gradient-weighted relevance of \citet{chefer2021transformer} is the
+most faithful method, closely followed by the CLS attention; attention rollout \citep{abnar2020attention} is
+less faithful and fails the sanity check, and the last-block Grad-CAM is barely better than a random order.
+CLS attention is the only method that is both faithful and clearly sensitive to the model. Following the
+pre-specified rule, \cref{fig:xai} shows the maps of the most faithful method for the first four images of a
+pre-specified random sample (seed-0 models; green: GT pole box).
+
+\begin{table}[t]
+\centering
+\caption{Comparison of attribution methods.}
+\label{tab:attribution}
+\small
+\begin{tabular}{lccc}
+\toprule
+method & energy-in-box & deletion gain over random [95\% CI] & sanity (Spearman) \\
+\midrule
+Grad-CAM (last block)                     & 8--11\%  & $+0.29$ [$+0.22, +0.37$] & 0.08 \\
+attention rollout                         & 10--11\% & $+2.44$ [$+2.15, +2.73$] & 0.96 \\
+CLS attention (last layer)                & 38--55\% & $+4.66$ [$+4.35, +4.97$] & 0.03 \\
+\citet{chefer2021transformer}             & 35--49\% & $+5.80$ [$+5.50, +6.08$] & 0.70 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{xai_examples}
-  \caption{Attention and Grad-CAM maps for four randomly drawn test images.}
+  \caption{Relevance maps of the most faithful attribution method for four randomly drawn test images.}
   \label{fig:xai}
 \end{figure}
 
@@ -617,8 +682,13 @@ used with a confidence threshold that sends uncertain images, typically those in
 human inspector. The controls show that simple label smoothing achieves the same benefit, so practitioners
 do not need angle annotations for this purpose.
 
-The backbone whose attention was most consistently on the pole was the less accurate one. Saliency maps should
-therefore not be used to select or justify models for this task without an accuracy evaluation.
+The explainability analyses give a more nuanced picture than the accuracy results alone. All models base their
+decision on the pole, as they should, but they also need the surroundings, probably as a vertical reference.
+Keypoint supervision made DINOv2 with registers rely more on the pole without making it more accurate, and the
+backbone whose attention was most consistently on the pole was the less accurate one. Pole-focused attention
+is therefore not a proxy for quality, and saliency maps should not be used to select or justify models for this
+task without an accuracy evaluation. The choice of attribution method also matters: the last-block Grad-CAM,
+a common default, was barely more informative than a random map for these models.
 
 Finally, the study shows why rigour mattered. Without equal-budget tuning, the first experiments suggested large effects of keypoint supervision ($+4.6$ and
 $-3.7$ points) in opposite directions on two backbones. Without replication and controls, the first soft-target experiment would have
@@ -634,7 +704,8 @@ effects of one to two points cannot be resolved, which our confidence intervals 
 ViT-B backbones from one family, and DINOv3, used for the dataset-card baseline, could not be evaluated because
 its weights are gated. The follow-up experiments reuse hyper-parameters tuned for the baseline, which may
 disadvantage the interventions; we accepted this to keep the number of test evaluations small. The
-explainability measures are correlational, and last-block Grad-CAM proved weak for these models. Finally,
+saliency measures are correlational, and the occlusion test replaces regions by a blurred version, which also
+moves the images away from the training distribution. Finally,
 pre-specification was done in a public repository rather than in a formal registry, and the main comparison
 was not pre-specified.
 
@@ -643,8 +714,9 @@ was not pre-specified.
 \label{sec:conclusion}
 We evaluated whether pole-axis keypoints improve image-level lean classification on PD-Defect under
 controlled conditions. They do not: after equal-budget tuning, with less data, with stronger augmentation and
-with angle-aware targets, the effects stay within the noise of fine-tuning, and keypoint supervision does not make the
-model's attention more pole-focused than classification-only training. The binding constraint is the label, which follows an implicit
+with angle-aware targets, the effects stay within the noise of fine-tuning. All models rely on the pole and
+on its surroundings, and keypoint supervision increases the reliance on the pole only for one backbone,
+without an accuracy gain. The binding constraint is the label, which follows an implicit
 $3^\circ$ threshold with an ambiguous band around it. Softened targets improve calibration, but plain
 smoothing does the same. We also identified a cross-task leakage in the dataset that affects more than half
 of the classification test set for any method that uses the keypoint split, and we provide a leakage-free

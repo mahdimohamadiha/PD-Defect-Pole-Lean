@@ -363,6 +363,39 @@ any map was inspected).
     Grad-CAM is faint and diffuse. The small red squares in the corners are artifact tokens.
   - Caveat: these are correlational saliency measures, not causal evidence.
 
+**X2: does the decision depend on the pole? (perturbation-based explainability, no training).** Pre-specified
+after X1 and before any X2 computation. X1 relied on saliency maps, which are correlational, and its primary map
+(last-block Grad-CAM) turned out to be diffuse for every model. X2 adds a perturbation test, which asks whether the
+decision actually changes when the pole is hidden, and transformer-specific attribution methods whose
+faithfulness is measured instead of assumed. Script: [`tools/analysis/xai2.py`](tools/analysis/xai2.py).
+- *Images and models:* the same 143 Leaned/Straight test images with a GT pole box (evaluation only), and the
+  same 18 checkpoints as X1 (tuned `cls` / `mt` for DINOv2 and DINOv2-reg, soft `cls` / `mt`; seeds 0–2).
+- *Primary metric, pole reliance:* the image region inside the GT pole box is replaced by a strongly blurred
+  version (Gaussian, radius 24 px at 448 px), and the drop in log-probability of the originally predicted class
+  is measured. The same is done for 5 boxes of the same size placed at random without overlap with the pole box
+  (rng 0 per image; images where no such box fits are excluded). Pole reliance = drop(pole) − mean drop(random).
+  Per image, averaged over seeds.
+- *Primary test:* `mt` vs `cls` for DINOv2 and for DINOv2-reg. Paired over images, with a bootstrap 95% CI of the
+  mean difference and a Wilcoxon test, Holm over these 2 comparisons.
+- *Prediction:* pole reliance is higher for `mt` than for `cls` on both backbones.
+- *Secondary analyses:*
+  1. Pole reliance for soft vs hard `cls`, and for DINOv2-reg vs DINOv2. These are two-sided, with no
+     prediction.
+  2. Prediction flip rate when the pole is blurred, against when a random box is blurred.
+  3. Context test (descriptive): accuracy when only the pole box is kept and everything else is blurred, against
+     the intact image.
+  4. Attribution methods: last-layer CLS attention, attention rollout (Abnar & Zuidema, 2020), the
+     gradient-weighted relevance of Chefer et al. (2021), and the X1 Grad-CAM. For each, report energy-in-box,
+     and faithfulness by a deletion test: patches are blurred in order of attribution, in 10 steps up to 50% of
+     the image, and the mean drop in log-probability of the predicted class (area over the curve) is compared
+     with a random order.
+  5. Sanity check (Adebayo et al., 2018) on `dinov2_tuned_cls` seed 0: the classification head and the last
+     4 blocks are re-initialised, and the Spearman correlation between the original and the randomised map is
+     reported for each method.
+- *Figure rule:* the explanation figure uses the attribution method with the best deletion faithfulness, the same
+  4 random images as X1, and the models DINOv2 `cls`, DINOv2 `mt` and DINOv2-reg `cls`. Grad-CAM is reported in
+  the tables and the text only.
+
 ## Data protocol
 
 - **Only the official classification split** is used: train 1706 / val 341 / test 227

@@ -71,7 +71,7 @@ def explain(model, x):
     lg[0, pred].backward()
     g = int(round(n ** 0.5))
     cam = torch.relu((h_in.grad[0, -n:] * h_in[0, -n:]).sum(-1)).detach().float().cpu().numpy().reshape(g, g)
-    nrm = h[0, -n:].norm(dim=-1).detach().float().cpu().numpy()
+    nrm = h_in[0, -n:].norm(dim=-1).detach().float().cpu().numpy()   # residual stream (before the final LayerNorm)
     art = (nrm > 3 * np.median(nrm)).reshape(g, g)   # high-norm "artifact" tokens (Darcet et al., 2024)
     att = None
     if out.attentions is not None and out.attentions[-1] is not None:

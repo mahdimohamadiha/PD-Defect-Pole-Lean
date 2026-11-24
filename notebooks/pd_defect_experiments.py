@@ -51,36 +51,21 @@ def download():
 
 @app.cell
 def plan():
-    # ---- batch 8 (H2b, pre-registered in README): (1) replication of H2 for cls on fresh seeds 3-5 (hard vs soft);
-    # (2) controls with the same images and the same target mass but no per-image angle information:
-    #     angle-shuffled soft targets and mass-matched uniform Leaned/Straight smoothing, seeds 0-5.
-    # DINOv2-base, batch-3 cls hyper-parameters, alpha 0.5 / t0 3.03 / tau 1 (as in b7), test once.
-    BATCH = "b8_h2b_ctrl_dinov2"
+    # ---- X2 (pre-registered in README): explainability on saved checkpoints, no training.
+    # It runs as a separate background job (tools/analysis/xai2.py), so this batch has no training runs.
+    BATCH = "x2_xai"
     GATED = set()
     CKPT_REPO = "northlattice/pd-defect-pole-lean-checkpoints"
-    SAVE_CKPT = True
-    BEST = json.load(open(f"{RESULTS}/b3_tune_dinov2/best_configs.json"))["best"]
-    _b = BEST["cls"]
-    HP = ["--mode", "cls", f"--lr_bb={_b['lr_bb']}", f"--lr_head={_b['lr_head']}", f"--epochs={_b['epochs']}"]
-    SOFT = ["--soft_alpha", "0.5", "--soft_t0", "3.03", "--soft_tau", "1.0"]
-    EXPERIMENTS = {
-        "dinov2_tuned_cls": [*HP],                                         # same tag as b4a -> pooled with seeds 0-2
-        "dinov2_soft_cls": [*HP, *SOFT],                                   # same tag as b7  -> pooled with seeds 0-2
-        "dinov2_softshuf_cls": [*HP, *SOFT, "--soft_ctrl", "shuffle"],
-        "dinov2_softunif_cls": [*HP, *SOFT, "--soft_ctrl", "uniform"],
-    }
-    SEEDS = [0, 1, 2, 3, 4, 5]
-    COMMON_ARGS = ["--workers", "12"]
+    SAVE_CKPT = False
+    EXPERIMENTS = {}
+    COMMON_ARGS = []
     RUN_DIR = f"{RESULTS}/{BATCH}"
     CKPT_DIR = f"{WORK}/checkpoints/{BATCH}"
-    # replication runs first (seed-major), then the controls (seed-major)
-    RUNS = ([(t, s) for s in [3, 4, 5] for t in ["dinov2_tuned_cls", "dinov2_soft_cls"]]
-            + [(t, s) for s in SEEDS for t in ["dinov2_softshuf_cls", "dinov2_softunif_cls"]])
-    ANALYSIS_CMD = ["analyze_results.py", "--results", f"{RESULTS}/b4a_final_dinov2", f"{RESULTS}/b7_h2_soft_dinov2", RUN_DIR,
-                    "--n_boot", "10000", "--out", f"{RUN_DIR}/analysis.json",
-                    "--pairs", "dinov2_tuned_cls:dinov2_soft_cls", "dinov2_softshuf_cls:dinov2_soft_cls",
-                    "dinov2_softunif_cls:dinov2_soft_cls", "dinov2_tuned_cls:dinov2_softshuf_cls",
-                    "dinov2_tuned_cls:dinov2_softunif_cls"]
+    RUNS = []
+    os.makedirs(RUN_DIR, exist_ok=True)
+    if not os.path.exists(f"{RUN_DIR}/analysis.txt"):
+        open(f"{RUN_DIR}/analysis.txt", "w").write("X2 runs outside the batch runner: see xai2_log.txt\n")
+    ANALYSIS_CMD = ["analyze_results.py"]
 
     return (
         ANALYSIS_CMD,
@@ -244,6 +229,20 @@ def analysis(ANALYSIS_CMD, BATCH, RUNS, RUN_DIR, refresh):
     analysis_text = open(_out).read() if os.path.exists(_out) else None
     mo.md(f"## Analysis · {BATCH}\n" + (f"```\n{analysis_text}\n```" if analysis_text
           else f"_Waiting for all runs: {_n_done} / {len(RUNS)} done._"))
+    return
+
+
+@app.cell(hide_code=True)
+def x2_status(refresh):
+    # X2 progress: the explainability job runs in the background (tools/analysis/xai2.py); this cell only reads its log.
+    refresh.value
+    _log = f"{RESULTS}/x2_xai/xai2_log.txt"
+    _lines = [l for l in open(_log).read().splitlines() if l.strip() and "Loading" not in l and "it/s" not in l
+              and "Warning" not in l and "warn" not in l] if os.path.exists(_log) else []
+    _done = [l for l in _lines if " pole reliance " in l]
+    mo.md(f"## X2 explainability job\n**Models done:** {len(_done)} / 18" + ("  ·  finished" if any(l.startswith("done") for l in _lines) else "")
+          + "\n```\n" + "\n".join(_lines[-25:]) + "\n```")
+
     return
 
 

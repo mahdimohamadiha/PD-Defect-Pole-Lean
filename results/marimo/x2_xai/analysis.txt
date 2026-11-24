@@ -1,0 +1,1 @@
+X2 runs outside the batch runner: see xai2_log.txt

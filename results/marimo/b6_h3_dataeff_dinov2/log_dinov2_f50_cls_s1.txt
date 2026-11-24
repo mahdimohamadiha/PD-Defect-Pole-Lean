@@ -5,3 +5,13 @@ train subset: frac 0.5 -> 853 images, 566 with kp
   scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
 /marimo/train_multitask.py:204: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
   scaler.step(opt); scaler.update(); sched.step()
+seed1 ep0 val acc 0.5894 macroF1 0.4991
+seed1 ep1 val acc 0.7595 macroF1 0.7160
+seed1 ep2 val acc 0.7625 macroF1 0.6951
+seed1 ep3 val acc 0.7302 macroF1 0.6481
+seed1 ep4 val acc 0.8065 macroF1 0.7732
+seed1 ep5 val acc 0.8035 macroF1 0.7700
+seed1 ep6 val acc 0.7918 macroF1 0.7379
+seed1 ep7 val acc 0.8299 macroF1 0.8059
+seed1 ep8 val acc 0.8152 macroF1 0.7735
+seed1 ep9 val acc 0.8094 macroF1 0.7597

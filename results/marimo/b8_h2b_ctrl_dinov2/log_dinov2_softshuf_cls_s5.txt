@@ -7,3 +7,10 @@ soft targets (shuffle): 1149 images, mean mass off the hard label 0.0891
   scaler.step(opt); scaler.update(); sched.step()
 seed5 ep0 val acc 0.7859 macroF1 0.7404
 seed5 ep1 val acc 0.7038 macroF1 0.7013
+seed5 ep2 val acc 0.8622 macroF1 0.8366
+seed5 ep3 val acc 0.8152 macroF1 0.7850
+seed5 ep4 val acc 0.8446 macroF1 0.8241
+seed5 ep5 val acc 0.8680 macroF1 0.8412
+seed5 ep6 val acc 0.8504 macroF1 0.8357
+seed5 ep7 val acc 0.8563 macroF1 0.8253
+seed5 ep8 val acc 0.8739 macroF1 0.8446

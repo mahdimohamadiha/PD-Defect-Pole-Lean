@@ -8,3 +8,16 @@ train subset: frac 0.5 -> 853 images, 580 with kp
 seed2 ep0 val acc 0.6540 macroF1 0.5560
 seed2 ep1 val acc 0.7918 macroF1 0.7348
 seed2 ep2 val acc 0.7155 macroF1 0.6884
+seed2 ep3 val acc 0.7918 macroF1 0.7244
+seed2 ep4 val acc 0.8094 macroF1 0.7627
+seed2 ep5 val acc 0.8182 macroF1 0.7865
+seed2 ep6 val acc 0.8152 macroF1 0.7688
+seed2 ep7 val acc 0.8152 macroF1 0.7514
+seed2 ep8 val acc 0.8416 macroF1 0.7959
+seed2 ep9 val acc 0.8534 macroF1 0.8120
+seed2 ep10 val acc 0.8563 macroF1 0.8144
+seed2 ep11 val acc 0.8504 macroF1 0.7988
+seed2 ep12 val acc 0.8123 macroF1 0.7582
+seed2 ep13 val acc 0.8446 macroF1 0.7992
+seed2 ep14 val acc 0.8358 macroF1 0.7784
+seed2 ep15 val acc 0.8416 macroF1 0.7943

@@ -7,8 +7,8 @@ regresses the pole axis (bottom and top keypoints).
 
 > **Status:** all main experiments are complete (default runs, validation-only equal-budget tuning and the
 > final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers), as are the diagnostic analyses and
-> the pre-registered follow-ups H1 (photometric augmentation) and H3 (data efficiency), both null. H2
-> (soft labels) is next, then the paper.
+> the pre-registered follow-ups: H1 (photometric augmentation) and H3 (data efficiency) are null; H2 (GT-angle soft
+> labels) gives the largest Macro-F1 gain (+2.3 for `cls`, not significant) and a clear calibration gain.
 
 ## Headline: tuned models (final)
 
@@ -234,6 +234,25 @@ near-threshold images. Soft targets that encode the measured angle should reduce
 - *Prediction:* Macro-F1 increases, errors in the 2–6° band decrease, and NLL / ECE decrease.
 - *Expected limitation:* the test labels share the same ≈ 3° ambiguity, so the attainable gain in accuracy is
   bounded. The GT-angle rule reaches 91.6% Leaned-vs-Straight accuracy on test, and the classifiers reach ≈ 90%.
+- **Result: primary outcome not significant; calibration improves.** Test, mean ± std over seeds 0–2
+  ([`analysis.txt`](results/marimo/b7_h2_soft_dinov2/analysis.txt), [`h2_soft.txt`](results/analysis/h2/h2_soft.txt)):
+
+  | model | Macro-F1 | Δ vs hard labels [95% CI] | McNemar Holm p | error 2–6° (n = 37) | NLL | ECE |
+  |---|---|---|---|---|---|---|
+  | `cls`, hard (b4a) | 83.50 ± 0.67 | – | – | 26.1% | 0.609 ± 0.007 | 10.4 ± 0.6% |
+  | `cls`, soft | **85.84 ± 1.33** | +2.34 [−1.29, +6.26] | 1.00 | 17.1% | **0.461 ± 0.037** | **6.7 ± 1.0%** |
+  | `mt`, hard (b4a) | 84.72 ± 2.29 | – | – | 21.6% | 0.543 ± 0.036 | 9.9 ± 1.8% |
+  | `mt`, soft | 85.17 ± 1.09 | +0.44 [−2.49, +3.23] | 1.00 | 20.7% | 0.477 ± 0.031 | 7.6 ± 1.0% |
+
+  - Every pre-registered outcome moves in the predicted direction for `cls`: Macro-F1 (+2.3, the largest gain in
+    this study, but its CI includes 0), errors in the 2–6° band (26.1% → 17.1%, descriptive), NLL and ECE.
+    The `Rejected` F1 also rises (80.4 → 84.3), although the targets of `Rejected` images are unchanged.
+  - *Exploratory (not pre-registered):* a paired bootstrap of the per-image NLL (seed-averaged probabilities) gives
+    ΔNLL = −0.148 [−0.273, −0.036] for `cls` and −0.066 [−0.172, +0.028] for `mt`.
+  - For `mt` the effects are smaller. Soft `cls` and soft `mt` are equal (−0.67 [−2.66, +1.27]).
+  - *Open confound:* soft targets also lower the target confidence in general, like label smoothing. Part of the
+    calibration gain could therefore come from smoothing alone, not from the angle information. A uniform
+    label-smoothing control with the same target mass is needed to separate the two.
 
 ## Data protocol
 
@@ -288,6 +307,7 @@ Default training settings:
 | `b4b_final_dinov2reg` | DINOv2-reg: best config per mode from `b3b`, seeds 0–2, single test evaluation, checkpoints saved | ✅ done |
 | `b5_h1_photo_dinov2` | H1: DINOv2 × {cls, mt} with `--aug photo`, seeds 0–2, checkpoints saved | ✅ done (null) |
 | `b6_h3_dataeff_dinov2` | H3: DINOv2 × {cls, mt} × train fraction {10, 25, 50%}, seeds 0–2 (no checkpoints) | ✅ done (null) |
+| `b7_h2_soft_dinov2` | H2: DINOv2 × {cls, mt} with GT-angle soft targets, seeds 0–2, checkpoints saved | ✅ done (F1 n.s., calibration ↑) |
 
 Per-run outputs are in [`results/marimo/`](results/marimo):
 - `res_<tag>_s<seed>.json`: metrics, test/val predictions, probabilities and predicted keypoints

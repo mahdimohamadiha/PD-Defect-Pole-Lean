@@ -64,3 +64,5 @@ the batch's existing results back into `/marimo/results/<batch>/`.
 - H1 `b5_h1_photo_dinov2` done: null (photo aug does not raise Macro-F1 / Rejected F1). 6 checkpoints on HF.
 - H3 `b6_h3_dataeff_dinov2` done: null (Δ mt−cls ≈ 0 at 10/25/50%; no growth with less data). No checkpoints (user's choice).
 - TODO: HF card update with H1 + H3 (needs the HF token in the sandbox box); then design and pre-register H2.
+- H2 `b7_h2_soft_dinov2` done (16:35 UTC): soft cls 85.84 (Δ +2.34 [−1.29, +6.26], n.s.); NLL 0.609 → 0.461,
+  ECE 10.4 → 6.7%; 2–6° errors 26.1 → 17.1%. 6 checkpoints on HF. Open confound: label smoothing (control needed).

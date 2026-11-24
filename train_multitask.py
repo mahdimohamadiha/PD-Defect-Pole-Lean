@@ -86,22 +86,57 @@ def photometric(img):
     return Image.fromarray((np.clip(x, 0, 1) * 255).astype(np.uint8))
 
 
-def soft_target(y, k, w, h, alpha, t0, tau):
+def gt_angle(k, w, h):
+    dx, dy = (k[2] - k[0]) * w, (k[3] - k[1]) * h
+    return math.degrees(math.atan2(abs(dx), abs(dy) + 1e-9))
+
+
+def soft_target(y, k, w, h, alpha, t0, tau, theta=None):
     """H2 (pre-registered): ambiguity-aware target for Leaned/Straight train images with GT keypoints.
     p_lean = sigmoid((theta - t0) / tau), theta = GT axis angle (deg, original pixel aspect);
-    target = (1 - alpha) * onehot(y) + alpha * [p_lean, 1 - p_lean, 0]. Rejected / no keypoints: onehot."""
+    target = (1 - alpha) * onehot(y) + alpha * [p_lean, 1 - p_lean, 0]. Rejected / no keypoints: onehot.
+    `theta` overrides the image's own angle (shuffled-angle control, H2b)."""
     t = np.zeros(3, dtype=np.float32); t[y] = 1.0
     if alpha > 0 and k is not None and y != 2:
-        dx, dy = (k[2] - k[0]) * w, (k[3] - k[1]) * h
-        theta = math.degrees(math.atan2(abs(dx), abs(dy) + 1e-9))
+        theta = gt_angle(k, w, h) if theta is None else theta
         pl = 1.0 / (1.0 + math.exp(-(theta - t0) / tau))
         t = (1 - alpha) * t + alpha * np.array([pl, 1 - pl, 0], dtype=np.float32)
     return t
 
 
+def train_targets(items, alpha, t0, tau, ctrl, seed):
+    """Per-item training targets. ctrl (H2b controls, same images and same target mass, no per-image angle):
+      none    : angle-aware soft targets (H2)
+      shuffle : the H2 recipe, but the angles are permuted among the eligible images of the same class
+                (rng 2000 + seed): identical distribution of targets per class, angle-image link broken
+      uniform : label smoothing between Leaned and Straight only, with the mass moved off the hard label
+                equal to the class-wise mean of the H2 targets"""
+    if alpha <= 0:
+        return None
+    el = [i for i, (_, y, k) in enumerate(items) if k is not None and y != 2]
+    theta = {i: gt_angle(items[i][2], *Image.open(items[i][0]).size) for i in el}
+    if ctrl == "shuffle":
+        rng = np.random.default_rng(2000 + seed)
+        for c in (0, 1):
+            ic = [i for i in el if items[i][1] == c]
+            vals = [theta[i] for i in ic]
+            theta.update({i: vals[j] for i, j in zip(ic, rng.permutation(len(ic)))})
+    T = [soft_target(y, k, 1, 1, alpha if i in theta else 0, t0, tau, theta.get(i))
+         for i, (_, y, k) in enumerate(items)]
+    if ctrl == "uniform":
+        for c in (0, 1):
+            ic = [i for i in el if items[i][1] == c]
+            mbar = float(np.mean([1 - T[i][c] for i in ic]))
+            for i in ic:
+                T[i] = np.zeros(3, dtype=np.float32); T[i][c] = 1 - mbar; T[i][1 - c] = mbar
+    moved = [1 - T[i][items[i][1]] for i in el]
+    print(f"soft targets ({ctrl}): {len(el)} images, mean mass off the hard label {np.mean(moved):.4f}")
+    return T
+
+
 class PoleDS(Dataset):
-    def __init__(self, items, size, train, aug="base", soft=(0.0, 3.03, 1.0)):
-        self.items, self.size, self.train, self.aug, self.soft = items, size, train, aug, soft
+    def __init__(self, items, size, train, aug="base", targets=None):
+        self.items, self.size, self.train, self.aug, self.targets = items, size, train, aug, targets
         import torchvision.transforms as T
         self.cj = T.ColorJitter(0.3, 0.3, 0.2, 0.02)
         self.norm = T.Compose([T.ToTensor(), T.Normalize(MEAN, STD)])
@@ -111,9 +146,8 @@ class PoleDS(Dataset):
 
     def __getitem__(self, i):
         p, y, k = self.items[i]
-        img = Image.open(p).convert("RGB")
-        t = soft_target(y, k, img.size[0], img.size[1], *self.soft) if self.train else np.eye(3, dtype=np.float32)[y]
-        img = img.resize((self.size, self.size), Image.BICUBIC)
+        img = Image.open(p).convert("RGB").resize((self.size, self.size), Image.BICUBIC)
+        t = self.targets[i] if self.targets is not None else np.eye(3, dtype=np.float32)[y]
         kp = np.array(k if k is not None else [0, 0, 0, 0], dtype=np.float32)
         m = np.float32(k is not None)
         if self.train:
@@ -191,8 +225,8 @@ def run(args, seed, idx):
         idx = {**idx, "train": _sub}
         print(f"train subset: frac {args.train_frac} -> {len(_sub)} images, {sum(x[2] is not None for x in _sub)} with kp")
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    mk = lambda sp, tr: DataLoader(PoleDS(idx[sp], args.size, tr, args.aug,
-                                                    (args.soft_alpha, args.soft_t0, args.soft_tau)), batch_size=args.bs, shuffle=tr,
+    T = train_targets(idx["train"], args.soft_alpha, args.soft_t0, args.soft_tau, args.soft_ctrl, seed)
+    mk = lambda sp, tr: DataLoader(PoleDS(idx[sp], args.size, tr, args.aug, T if tr else None), batch_size=args.bs, shuffle=tr,
                                    num_workers=args.workers, drop_last=tr, persistent_workers=args.workers > 0)
     tr, va = mk("train", True), mk("val", False)
     te = None if args.no_test else mk("test", False)
@@ -274,6 +308,8 @@ if __name__ == "__main__":
     ap.add_argument("--soft_alpha", type=float, default=0.0, help="H2: weight of the GT-angle soft target (0 = hard labels)")
     ap.add_argument("--soft_t0", type=float, default=3.03, help="H2: angle threshold (deg), fitted on train only (phase 1)")
     ap.add_argument("--soft_tau", type=float, default=1.0, help="H2: sigmoid temperature (deg)")
+    ap.add_argument("--soft_ctrl", default="none", choices=["none", "shuffle", "uniform"],
+                    help="H2b controls: angle-shuffled soft targets / mass-matched uniform L-S smoothing")
     ap.add_argument("--no_test", action="store_true", help="skip the test split entirely (hyper-parameter search)")
     ap.add_argument("--data_dir", default="/kaggle/working/pd-defect", help="download target (--root should be <data_dir>/pole_lean_assessment)")
     a = ap.parse_args()

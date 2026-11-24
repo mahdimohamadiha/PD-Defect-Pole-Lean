@@ -254,6 +254,26 @@ near-threshold images. Soft targets that encode the measured angle should reduce
     calibration gain could therefore come from smoothing alone, not from the angle information. A uniform
     label-smoothing control with the same target mass is needed to separate the two.
 
+**H2b: replication and smoothing controls for H2 (batch `b8_h2b_ctrl_dinov2`).** Pre-registered after the H2 result,
+before any of these runs. `cls` only, because the H2 effect was seen there. Hyper-parameters and α / θ₀ / τ are as
+in H2.
+- *Replication:* hard (`dinov2_tuned_cls`) and soft (`dinov2_soft_cls`) targets on **new seeds 3–5**.
+  - *Primary outcome:* Δ Macro-F1 (soft − hard) on seeds 3–5 only. These seeds are fresh, so this is the
+    confirmatory test.
+  - The pooled 6-seed result (seeds 0–5) is also reported. It is not independent of H2, because seeds 0–2 are reused.
+- *Controls* (seeds 0–5): same images and the same target mass, without the per-image angle:
+  - `softshuf`: the H2 recipe, but the GT angles are permuted among the images of the same class (rng 2000 + seed).
+    The per-class distribution of targets is identical to H2; only the image-angle link is broken.
+  - `softunif`: label smoothing between Leaned and Straight only. Each eligible image moves the class-wise mean
+    H2 mass off its hard label (Leaned 0.099, Straight 0.084).
+  - *Outcomes:* Macro-F1 (paired bootstrap, McNemar; Holm over the 5 pairs in the plan), NLL / ECE, and errors in
+    the 2–6° band, soft vs each control.
+- *Prediction:* the Macro-F1 gain replicates on seeds 3–5 (Δ > 0). Soft beats both controls on Macro-F1 and on
+  2–6° errors. For calibration, part of the gain is expected from smoothing alone, so soft ≈ controls is plausible
+  for NLL / ECE.
+- *Decision rule (fixed now):* the paper claims an angle-specific benefit only if soft > both controls in
+  Macro-F1 with a 95% CI above 0. Otherwise it reports a smoothing / calibration effect.
+
 ## Data protocol
 
 - **Only the official classification split** is used: train 1706 / val 341 / test 227

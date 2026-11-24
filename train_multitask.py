@@ -86,9 +86,22 @@ def photometric(img):
     return Image.fromarray((np.clip(x, 0, 1) * 255).astype(np.uint8))
 
 
+def soft_target(y, k, w, h, alpha, t0, tau):
+    """H2 (pre-registered): ambiguity-aware target for Leaned/Straight train images with GT keypoints.
+    p_lean = sigmoid((theta - t0) / tau), theta = GT axis angle (deg, original pixel aspect);
+    target = (1 - alpha) * onehot(y) + alpha * [p_lean, 1 - p_lean, 0]. Rejected / no keypoints: onehot."""
+    t = np.zeros(3, dtype=np.float32); t[y] = 1.0
+    if alpha > 0 and k is not None and y != 2:
+        dx, dy = (k[2] - k[0]) * w, (k[3] - k[1]) * h
+        theta = math.degrees(math.atan2(abs(dx), abs(dy) + 1e-9))
+        pl = 1.0 / (1.0 + math.exp(-(theta - t0) / tau))
+        t = (1 - alpha) * t + alpha * np.array([pl, 1 - pl, 0], dtype=np.float32)
+    return t
+
+
 class PoleDS(Dataset):
-    def __init__(self, items, size, train, aug="base"):
-        self.items, self.size, self.train, self.aug = items, size, train, aug
+    def __init__(self, items, size, train, aug="base", soft=(0.0, 3.03, 1.0)):
+        self.items, self.size, self.train, self.aug, self.soft = items, size, train, aug, soft
         import torchvision.transforms as T
         self.cj = T.ColorJitter(0.3, 0.3, 0.2, 0.02)
         self.norm = T.Compose([T.ToTensor(), T.Normalize(MEAN, STD)])
@@ -98,7 +111,9 @@ class PoleDS(Dataset):
 
     def __getitem__(self, i):
         p, y, k = self.items[i]
-        img = Image.open(p).convert("RGB").resize((self.size, self.size), Image.BICUBIC)
+        img = Image.open(p).convert("RGB")
+        t = soft_target(y, k, img.size[0], img.size[1], *self.soft) if self.train else np.eye(3, dtype=np.float32)[y]
+        img = img.resize((self.size, self.size), Image.BICUBIC)
         kp = np.array(k if k is not None else [0, 0, 0, 0], dtype=np.float32)
         m = np.float32(k is not None)
         if self.train:
@@ -109,7 +124,7 @@ class PoleDS(Dataset):
                 img = img.transpose(Image.FLIP_LEFT_RIGHT)
                 kp[[0, 2]] = 1 - kp[[0, 2]]
             # NOTE: no rotation / shear: they would change the lean label itself.
-        return self.norm(img), y, torch.from_numpy(kp), torch.tensor(m)
+        return self.norm(img), y, torch.from_numpy(kp), torch.tensor(m), torch.from_numpy(t)
 
 
 # ---------------------------------------------------------------- model
@@ -154,7 +169,7 @@ class MTNet(nn.Module):
 @torch.no_grad()
 def evaluate(model, dl, dev, full=False):
     model.eval(); ys, ps, probs, kps = [], [], [], []
-    for x, y, _, _ in dl:
+    for x, y, *_ in dl:
         with torch.autocast("cuda", dtype=torch.float16, enabled=dev == "cuda"):
             lg, kp = model(x.to(dev))
         ys += y.tolist(); ps += lg.argmax(-1).cpu().tolist()
@@ -176,7 +191,8 @@ def run(args, seed, idx):
         idx = {**idx, "train": _sub}
         print(f"train subset: frac {args.train_frac} -> {len(_sub)} images, {sum(x[2] is not None for x in _sub)} with kp")
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    mk = lambda sp, tr: DataLoader(PoleDS(idx[sp], args.size, tr, args.aug), batch_size=args.bs, shuffle=tr,
+    mk = lambda sp, tr: DataLoader(PoleDS(idx[sp], args.size, tr, args.aug,
+                                                    (args.soft_alpha, args.soft_t0, args.soft_tau)), batch_size=args.bs, shuffle=tr,
                                    num_workers=args.workers, drop_last=tr, persistent_workers=args.workers > 0)
     tr, va = mk("train", True), mk("val", False)
     te = None if args.no_test else mk("test", False)
@@ -192,11 +208,15 @@ def run(args, seed, idx):
     best, best_ep = (-1, None), -1
     for ep in range(args.epochs):
         model.train()
-        for x, y, kp, m in tr:
-            x, y, kp, m = x.to(dev), y.to(dev), kp.to(dev), m.to(dev)
+        for x, y, kp, m, t in tr:
+            x, y, kp, m, t = x.to(dev), y.to(dev), kp.to(dev), m.to(dev), t.to(dev)
             with torch.autocast("cuda", dtype=torch.float16, enabled=dev == "cuda"):
                 lg, kp_hat = model(x)
-                loss = F.cross_entropy(lg, y, weight=w)
+                if args.soft_alpha > 0:   # weighted soft CE; equals the weighted hard CE for one-hot targets
+                    wt = t * w
+                    loss = -(wt * F.log_softmax(lg.float(), -1)).sum() / wt.sum()
+                else:
+                    loss = F.cross_entropy(lg, y, weight=w)
                 if args.mode != "cls" and m.sum() > 0:
                     l_kp = (F.smooth_l1_loss(kp_hat.float(), kp, reduction="none", beta=0.02).mean(1) * m).sum() / m.sum()
                     loss = loss + args.lam * l_kp
@@ -251,6 +271,9 @@ if __name__ == "__main__":
     ap.add_argument("--aug", default="base", choices=["base", "photo"],
                     help="base = hflip + colour jitter; photo = base + random gamma + low-light simulation (H1)")
     ap.add_argument("--train_frac", type=float, default=1.0, help="H3: stratified fraction of the train split")
+    ap.add_argument("--soft_alpha", type=float, default=0.0, help="H2: weight of the GT-angle soft target (0 = hard labels)")
+    ap.add_argument("--soft_t0", type=float, default=3.03, help="H2: angle threshold (deg), fitted on train only (phase 1)")
+    ap.add_argument("--soft_tau", type=float, default=1.0, help="H2: sigmoid temperature (deg)")
     ap.add_argument("--no_test", action="store_true", help="skip the test split entirely (hyper-parameter search)")
     ap.add_argument("--data_dir", default="/kaggle/working/pd-defect", help="download target (--root should be <data_dir>/pole_lean_assessment)")
     a = ap.parse_args()

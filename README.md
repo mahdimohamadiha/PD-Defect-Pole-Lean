@@ -212,9 +212,27 @@ labelled images are scarce.
   could detect a data-efficiency effect. No such effect appears: Δ is ≈ 0 at every fraction and does not grow as
   data shrinks. Keypoint supervision does not act as a sample-efficiency regulariser for a DINOv2 backbone here.
 
-**H2: ambiguity-aware soft labels.** Soft Leaned/Straight targets from the GT axis angle around the ≈ 3° implicit
-threshold, for train images with keypoints. Prediction: fewer errors in the 2–6° band and better calibration.
-The design will be detailed here before it runs.
+**H2: ambiguity-aware soft labels (batch `b7_h2_soft_dinov2`).** Phase 1 showed that the Leaned/Straight labels follow
+an implicit ≈ 3° threshold, that 16.8% of train `Leaned` images have a GT angle < 3°, and that the test errors
+concentrate in the 2–6° band. Hard one-hot targets force the model to be confident on these inconsistent,
+near-threshold images. Soft targets that encode the measured angle should reduce this.
+- *Intervention:* for Leaned/Straight train images with GT keypoints (1,149 of 1,426), the target becomes
+  (1 − α)·onehot(y) + α·[p, 1 − p, 0], where p = sigmoid((θ − θ₀)/τ) and θ is the GT axis angle (original
+  pixel aspect). The hard label always keeps ≥ 50% of the mass, so the label is softened and never flipped.
+  `Rejected` images and images without keypoints keep one-hot targets. The loss is the class-weighted soft
+  cross-entropy, which equals the baseline loss for one-hot targets.
+- *Fixed a priori, not tuned:* α = 0.5, θ₀ = 3.03° (fitted on train only in phase 1), τ = 1°. Validation and test
+  keypoints are never used.
+- *Setting:* DINOv2-base with the batch-3 hyper-parameters (not re-tuned, which is conservative), `cls` and `mt`,
+  seeds 0–2, with checkpoints.
+- *Primary outcome:* test Macro-F1 versus the tuned models of `b4a` (paired bootstrap, McNemar, Holm over 3 pairs).
+- *Secondary outcomes:*
+  - test error rate in the 2–6° GT-angle band. Only 37 test images fall in this band, so this has low power and is
+    descriptive;
+  - calibration on test: NLL and ECE (15 equal-width bins), seed-averaged.
+- *Prediction:* Macro-F1 increases, errors in the 2–6° band decrease, and NLL / ECE decrease.
+- *Expected limitation:* the test labels share the same ≈ 3° ambiguity, so the attainable gain in accuracy is
+  bounded. The GT-angle rule reaches 91.6% Leaned-vs-Straight accuracy on test, and the classifiers reach ≈ 90%.
 
 ## Data protocol
 

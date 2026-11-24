@@ -169,7 +169,8 @@ frequent in train `Rejected`, and that valid dusk or night poles are wrongly pre
 - *Setting:* DINOv2-base with the batch-3 hyper-parameters (not re-tuned, which is conservative), `cls` and `mt`,
   seeds 0–2, with checkpoints.
 - *Primary outcome:* test Macro-F1 versus the tuned models of `b4a` (paired bootstrap, McNemar, Holm over 3 pairs).
-- *Secondary outcomes:* `Rejected` F1, and the false-`Rejected` rate on dark test images.
+- *Secondary outcomes:* `Rejected` F1, and the false-`Rejected` rate on low-light Leaned/Straight test images
+  (lowest quartile of mean grey value; [`tools/analysis/h1_dark.py`](tools/analysis/h1_dark.py)).
 - *Prediction:* `Rejected` F1 and Macro-F1 increase.
 
 **H3: data efficiency (batch `b6_h3_dataeff_dinov2`).** Auxiliary keypoint supervision should matter more when

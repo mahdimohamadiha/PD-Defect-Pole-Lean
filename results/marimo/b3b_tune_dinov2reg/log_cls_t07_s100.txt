@@ -12,3 +12,12 @@ seed100 ep4 val acc 0.8622 macroF1 0.8370
 seed100 ep5 val acc 0.8182 macroF1 0.7877
 seed100 ep6 val acc 0.8504 macroF1 0.8316
 seed100 ep7 val acc 0.8446 macroF1 0.8275
+seed100 ep8 val acc 0.8592 macroF1 0.8317
+seed100 ep9 val acc 0.8680 macroF1 0.8452
+seed100 ep10 val acc 0.8622 macroF1 0.8377
+seed100 ep11 val acc 0.8651 macroF1 0.8426
+seed100 ep12 val acc 0.8651 macroF1 0.8429
+seed100 ep13 val acc 0.8651 macroF1 0.8429
+seed100 ep14 val acc 0.8651 macroF1 0.8429
+{'seed': 100, 'mode': 'cls', 'tag': 'cls_t07', 'backbone': 'facebook/dinov2-with-registers-base', 'best_epoch': 9, 'val_macroF1': 0.8451901549290691, 'val_acc': 0.8680351906158358}
+val_macroF1 0.8452 +- 0.0000

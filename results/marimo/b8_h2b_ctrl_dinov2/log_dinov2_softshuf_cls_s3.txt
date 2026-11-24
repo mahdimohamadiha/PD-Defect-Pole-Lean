@@ -5,3 +5,11 @@ soft targets (shuffle): 1149 images, mean mass off the hard label 0.0891
   scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
 /marimo/train_multitask.py:258: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
   scaler.step(opt); scaler.update(); sched.step()
+seed3 ep0 val acc 0.6481 macroF1 0.6335
+seed3 ep1 val acc 0.5924 macroF1 0.5953
+seed3 ep2 val acc 0.7801 macroF1 0.7620
+seed3 ep3 val acc 0.8475 macroF1 0.8115
+seed3 ep4 val acc 0.8387 macroF1 0.8129
+seed3 ep5 val acc 0.8416 macroF1 0.8114
+seed3 ep6 val acc 0.7771 macroF1 0.7537
+seed3 ep7 val acc 0.8534 macroF1 0.8205

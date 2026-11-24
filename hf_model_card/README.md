@@ -33,6 +33,8 @@ the pole axis (bottom and top keypoints).
 | `dinov2reg_cls` | DINOv2 with registers (base) | classification loss only |
 | `dinov2reg_mt` | DINOv2 with registers (base) | + auxiliary keypoint loss (λ = 5) |
 | `dinov2_mt_geo_d` | DINOv2 (base) | `mt` + classifier also sees the geometry of the predicted axis (detached keypoints) |
+| `dinov2_soft_cls` / `dinov2_soft_mt` (`b7_h2_soft_dinov2/`) | DINOv2 (base) | tuned config + angle-aware soft Leaned/Straight targets (H2) |
+| `dinov2_photo_cls` / `dinov2_photo_mt` (`b5_h1_photo_dinov2/`) | DINOv2 (base) | tuned config + extra photometric augmentation (H1) |
 
 The batch-1 DINOv2 `cls` / `mt` models (default settings) were trained before checkpoint saving was enabled.
 The tuned DINOv2 checkpoints above replace them.
@@ -68,6 +70,26 @@ Macro-F1 by about 1 point on average, which is the same size as these difference
 The auxiliary keypoint loss helps DINOv2 (+4.6 Macro-F1, 95% CI [+2.0, +7.5]) but hurts DINOv2 with
 registers (−3.7, CI [−6.6, −1.0]) at these untuned settings. Both effects largely disappear after tuning (see above).
 
+**Follow-up experiments** (DINOv2, tuned config, planned before running; Δ = paired bootstrap 95% CI vs the
+tuned model with the same mode):
+
+| tag | Macro-F1 | Δ Macro-F1 | test NLL | test ECE |
+|---|---|---|---|---|
+| `dinov2_tuned_cls` (reference) | 83.50 ± 0.67 | – | 0.609 | 10.4% |
+| **`dinov2_soft_cls`** | **85.84 ± 1.33** | +2.34 [−1.3, +6.3] | **0.461** | **6.7%** |
+| `dinov2_tuned_mt` (reference) | 84.72 ± 2.29 | – | 0.543 | 9.9% |
+| `dinov2_soft_mt` | 85.17 ± 1.09 | +0.44 [−2.5, +3.2] | 0.477 | 7.6% |
+| `dinov2_photo_cls` | 83.47 ± 1.72 | −0.03 [−3.0, +3.0] | – | – |
+| `dinov2_photo_mt` | 83.42 ± 1.22 | −1.30 [−4.1, +1.5] | – | – |
+
+- *Soft targets:* for Leaned/Straight train images with keypoints, the target is
+  0.5·onehot + 0.5·[p, 1 − p, 0], with p = sigmoid((θ − 3.03°)/1°) and θ the ground-truth axis angle.
+  This gives the largest Macro-F1 gain (not significant) and clearly better calibration. A label-smoothing
+  control has not been run yet.
+- *Photometric augmentation* (random gamma and low-light simulation) does not help.
+- *Data efficiency:* with 10 / 25 / 50% of the training images, `mt` and `cls` stay within 1 point of each other
+  (no checkpoints).
+
 The dataset card reports a DINOv3 ViT-B/16 baseline of 84.14 Acc / 81.74 Macro-F1. This value lies inside
 our confidence intervals, so no claim of outperforming it is made.
 
@@ -77,6 +99,8 @@ our confidence intervals, so no claim of outperforming it is made.
 b4a_final_dinov2/<tag>_s<seed>.pt        tuned DINOv2, seeds 0, 1, 2
 b4b_final_dinov2reg/<tag>_s<seed>.pt     tuned DINOv2 with registers, seeds 0, 1, 2
 b2_dinov2reg_geofix/<tag>_s<seed>.pt     default settings, seeds 0, 1, 2
+b5_h1_photo_dinov2/<tag>_s<seed>.pt      DINOv2 + photometric augmentation, seeds 0, 1, 2
+b7_h2_soft_dinov2/<tag>_s<seed>.pt       DINOv2 + soft targets, seeds 0, 1, 2
 ```
 
 Each file is a `torch.save` dict with these keys:

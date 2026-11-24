@@ -6,8 +6,9 @@ CC BY 4.0). A ViT backbone is fine-tuned for 3-way classification, with an auxil
 regresses the pole axis (bottom and top keypoints).
 
 > **Status:** all main experiments are complete (default runs, validation-only equal-budget tuning and the
-> final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers). Remaining work is analysis
-> without new training (rule baseline on predicted keypoint angle, label-subjectivity analysis) and the paper.
+> final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers), as are the diagnostic analyses and
+> the pre-registered follow-ups H1 (photometric augmentation) and H3 (data efficiency), both null. H2
+> (soft labels) is next, then the paper.
 
 ## Headline: tuned models (final)
 
@@ -197,6 +198,19 @@ labelled images are scarce.
 - *Primary outcome:* Δ Macro-F1 (`mt` − `cls`) at each fraction (paired bootstrap and McNemar, Holm over the 4 pairs
   including full data).
 - *Prediction:* Δ is positive and grows as the fraction shrinks.
+- **Result: not supported (null).** Test Macro-F1, mean ± std over seeds 0–2
+  ([`analysis.txt`](results/marimo/b6_h3_dataeff_dinov2/analysis.txt)):
+
+  | train fraction | images | `cls` | `mt` | Δ (`mt` − `cls`) [95% CI] | McNemar maj. vote, Holm p |
+  |---|---|---|---|---|---|
+  | 10% | 170 | 68.82 ± 2.72 | 68.46 ± 4.68 | −0.37 [−3.34, +2.51] | 1.00 |
+  | 25% | ≈ 426 | 78.83 ± 0.73 | 78.55 ± 3.05 | −0.28 [−3.06, +2.40] | 1.00 |
+  | 50% | ≈ 853 | 82.13 ± 0.46 | 81.36 ± 0.66 | −0.78 [−3.96, +2.45] | 1.00 |
+  | 100% (b4a) | 1706 | 83.50 ± 0.67 | 84.72 ± 2.29 | +1.23 [−2.01, +4.70] | 0.95 |
+
+  The learning curve is steep (−15 Macro-F1 from 100% to 10%, mostly in `Rejected` F1: 80 → 51), so the setting
+  could detect a data-efficiency effect. No such effect appears: Δ is ≈ 0 at every fraction and does not grow as
+  data shrinks. Keypoint supervision does not act as a sample-efficiency regulariser for a DINOv2 backbone here.
 
 **H2: ambiguity-aware soft labels.** Soft Leaned/Straight targets from the GT axis angle around the ≈ 3° implicit
 threshold, for train images with keypoints. Prediction: fewer errors in the 2–6° band and better calibration.
@@ -253,6 +267,8 @@ Default training settings:
 | `b4a_final_dinov2` | DINOv2: best config per mode from `b3`, seeds 0–2, single test evaluation, checkpoints saved | ✅ done |
 | `b3b_tune_dinov2reg` | same search (same 8 configs, same λ draws, same seeds) on DINOv2-with-registers | ✅ done |
 | `b4b_final_dinov2reg` | DINOv2-reg: best config per mode from `b3b`, seeds 0–2, single test evaluation, checkpoints saved | ✅ done |
+| `b5_h1_photo_dinov2` | H1: DINOv2 × {cls, mt} with `--aug photo`, seeds 0–2, checkpoints saved | ✅ done (null) |
+| `b6_h3_dataeff_dinov2` | H3: DINOv2 × {cls, mt} × train fraction {10, 25, 50%}, seeds 0–2 (no checkpoints) | ✅ done (null) |
 
 Per-run outputs are in [`results/marimo/`](results/marimo):
 - `res_<tag>_s<seed>.json`: metrics, test/val predictions, probabilities and predicted keypoints

@@ -66,3 +66,5 @@ the batch's existing results back into `/marimo/results/<batch>/`.
 - TODO: HF card update with H1 + H3 (needs the HF token in the sandbox box); then design and pre-register H2.
 - H2 `b7_h2_soft_dinov2` done (16:35 UTC): soft cls 85.84 (Δ +2.34 [−1.29, +6.26], n.s.); NLL 0.609 → 0.461,
   ECE 10.4 → 6.7%; 2–6° errors 26.1 → 17.1%. 6 checkpoints on HF. Open confound: label smoothing (control needed).
+- H2b `b8_h2b_ctrl_dinov2` done (18:00 UTC): replication +1.49 [−1.28, +4.44] n.s.; soft ≈ shuffled control → no angle-specific claim; calibration gain = smoothing. 12 ckpts on HF.
+- X1 (XAI energy-in-box) pre-registered; running in sandbox (`results/xai_x1`).

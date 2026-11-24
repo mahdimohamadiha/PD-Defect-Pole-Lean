@@ -1,0 +1,29 @@
+test images: 227 | bootstrap resamples: 10000
+
+== 1-2. per mode (mean +- std over seeds; 95% bootstrap CI of the seed-averaged metric)
+dinov2_soft_cls seeds=[3, 4, 5]
+   acc      86.34 +- 2.68  CI95 [82.23, 90.16]  card baseline 84.14 inside CI
+   macroF1  84.36 +- 2.52  CI95 [79.19, 88.84]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 81.17, 'Straight': 90.41, 'Rejected': 81.5} | majority vote: {'acc': 88.55, 'macroF1': 86.68}
+dinov2_softshuf_cls seeds=[0, 1, 2, 3, 4, 5]
+   acc      86.49 +- 1.24  CI95 [82.97, 89.80]  card baseline 84.14 inside CI
+   macroF1  84.30 +- 1.66  CI95 [79.80, 88.14]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 80.47, 'Straight': 90.74, 'Rejected': 81.68} | majority vote: {'acc': 90.75, 'macroF1': 89.39}
+dinov2_softunif_cls seeds=[0, 1, 2, 3, 4, 5]
+   acc      85.46 +- 1.60  CI95 [81.72, 89.13]  card baseline 84.14 inside CI
+   macroF1  82.91 +- 2.05  CI95 [78.05, 87.18]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 78.21, 'Straight': 90.41, 'Rejected': 80.1} | majority vote: {'acc': 86.34, 'macroF1': 84.45}
+dinov2_tuned_cls seeds=[3, 4, 5]
+   acc      85.76 +- 1.42  CI95 [81.79, 89.57]  card baseline 84.14 inside CI
+   macroF1  82.87 +- 1.56  CI95 [77.63, 87.44]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 79.32, 'Straight': 90.68, 'Rejected': 78.61} | majority vote: {'acc': 86.34, 'macroF1': 83.21}
+
+== 2-3. pairwise: bootstrap CI of the difference (B - A) + exact McNemar
+dinov2_soft_cls vs dinov2_tuned_cls:
+   dacc      +0.59  CI95 [-2.06, +3.23]  P(diff<=0)=0.347
+   dmacroF1  +1.49  CI95 [-1.28, +4.44]  P(diff<=0)=0.149
+   McNemar per seed  s3: b=20 c=12 p=0.215, s4: b=8 c=11 p=0.648, s5: b=5 c=14 p=0.064
+   McNemar maj.vote  b=6 c=11 p=0.3323  Holm-adj p=0.3323
+   (b = A right & B wrong, c = A wrong & B right)
+
+saved results/analysis/h2b/seeds345.json

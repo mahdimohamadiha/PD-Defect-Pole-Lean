@@ -8,7 +8,8 @@ regresses the pole axis (bottom and top keypoints).
 > **Status:** all main experiments are complete (default runs, validation-only equal-budget tuning and the
 > final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers), as are the diagnostic analyses and
 > the pre-registered follow-ups: H1 (photometric augmentation) and H3 (data efficiency) are null; H2 (GT-angle soft
-> labels) gives the largest Macro-F1 gain (+2.3 for `cls`, not significant) and a clear calibration gain.
+> labels) improves calibration, but the H2b controls show that this comes from target smoothing, not from the
+> angle. Explainability analysis (X1) is next, then the paper.
 
 ## Headline: tuned models (final)
 
@@ -273,6 +274,35 @@ in H2.
   for NLL / ECE.
 - *Decision rule (fixed now):* the paper claims an angle-specific benefit only if soft > both controls in
   Macro-F1 with a 95% CI above 0. Otherwise it reports a smoothing / calibration effect.
+- **Result: no angle-specific benefit; the calibration gain comes from target smoothing.**
+  Test, `cls` only ([`analysis.txt`](results/marimo/b8_h2b_ctrl_dinov2/analysis.txt),
+  [`seeds345_primary.txt`](results/analysis/h2b/seeds345_primary.txt), [`h2_soft.txt`](results/analysis/h2/h2_soft.txt)):
+
+  | targets | seeds | Macro-F1 | NLL | ECE | error 2–6° |
+  |---|---|---|---|---|---|
+  | hard | 0–5 | 83.18 ± 1.13 | 0.577 | 10.1% | 24.8% |
+  | soft, GT angle (H2) | 0–5 | **85.10 ± 1.98** | 0.475 | 7.5% | 22.1% |
+  | soft, angles shuffled within class | 0–5 | 84.30 ± 1.66 | 0.476 | 6.4% | 20.7% |
+  | uniform L/S smoothing, same mass | 0–5 | 82.91 ± 2.05 | 0.492 | 7.3% | 24.3% |
+
+  | comparison (Δ Macro-F1, paired bootstrap 95% CI) | Δ | McNemar maj. vote, Holm p |
+  |---|---|---|
+  | **soft − hard, new seeds 3–5 (primary, confirmatory)** | **+1.49 [−1.28, +4.44]** | 0.33 (single pair) |
+  | soft − hard, seeds 0–5 (pooled, not independent of H2) | +1.91 [−0.61, +4.60] | 0.84 |
+  | soft − shuffled-angle control | +0.80 [−1.33, +2.89] | 0.85 |
+  | soft − uniform control | +2.19 [+0.13, +4.35] | 0.84 |
+  | shuffled-angle control − hard | +1.11 [−0.97, +3.43] | 0.11 |
+  | uniform control − hard | −0.28 [−2.22, +1.68] | 1.00 |
+
+  - The Macro-F1 gain of H2 keeps its sign on fresh seeds but shrinks (+2.3 → +1.5), and its CI includes 0.
+  - The decision rule is **not met**: soft targets do not beat the shuffled-angle control. So no claim is
+    made that the per-image angle helps. The drop in 2–6° errors seen in H2 (26 → 17%) also does not replicate
+    on seeds 3–5 (23.4 → 27.0%).
+  - The calibration gain is robust (NLL 0.577 → 0.475 over 6 seeds; 0.545 → 0.489 on seeds 3–5 alone), but both
+    controls reach the same NLL / ECE. It is therefore a property of softened targets, not of the angle.
+  - *Exploratory:* heterogeneous soft targets (GT or shuffled angles) do slightly better than uniform smoothing
+    with the same mean mass, but the evidence is weak (only soft − uniform has a CI above 0, uncorrected, and
+    McNemar is not significant).
 
 **X1: does keypoint supervision make the classifier look at the pole? (explainability, no training).**
 Keypoint supervision did not raise accuracy. It could still change *what* the classifier relies on. This is
@@ -360,6 +390,7 @@ Default training settings:
 | `b5_h1_photo_dinov2` | H1: DINOv2 × {cls, mt} with `--aug photo`, seeds 0–2, checkpoints saved | ✅ done (null) |
 | `b6_h3_dataeff_dinov2` | H3: DINOv2 × {cls, mt} × train fraction {10, 25, 50%}, seeds 0–2 (no checkpoints) | ✅ done (null) |
 | `b7_h2_soft_dinov2` | H2: DINOv2 × {cls, mt} with GT-angle soft targets, seeds 0–2, checkpoints saved | ✅ done (F1 n.s., calibration ↑) |
+| `b8_h2b_ctrl_dinov2` | H2b: cls hard / soft on new seeds 3–5; shuffled-angle and uniform-smoothing controls, seeds 0–5; checkpoints saved | ✅ done (no angle-specific effect) |
 
 Per-run outputs are in [`results/marimo/`](results/marimo):
 - `res_<tag>_s<seed>.json`: metrics, test/val predictions, probabilities and predicted keypoints

@@ -103,6 +103,28 @@ never loaded (`--no_test`). Validation Macro-F1, mean over the 2 seeds:
 - Output: [`b3_tune_dinov2/analysis.txt`](results/marimo/b3_tune_dinov2/analysis.txt),
   [`best_configs.json`](results/marimo/b3_tune_dinov2/best_configs.json).
 
+## Hyper-parameter search (DINOv2-with-registers, validation only)
+
+Same search as above (same 8 configurations, same λ draws, same search seeds), backbone
+`facebook/dinov2-with-registers-base`. Validation Macro-F1, mean over the 2 seeds:
+
+| trial | lr backbone | lr head | epochs | λ (mt) | `cls` | `mt` |
+|---|---|---|---|---|---|---|
+| 0 (default) | 2e-5 | 1e-3 | 15 | 5 | **84.46** | 84.39 |
+| 1 | 5e-5 | 3e-4 | 15 | 10 | 82.20 | 81.92 |
+| 2 | 3e-5 | 1e-3 | 15 | 10 | 83.15 | 83.75 |
+| 3 | 1e-5 | 1e-3 | 25 | 2 | 83.35 | 84.11 |
+| 4 | 2e-5 | 3e-3 | 25 | 1 | 83.74 | **84.57** |
+| 5 | 3e-5 | 3e-3 | 25 | 5 | 83.02 | 81.64 |
+| 6 | 1e-5 | 3e-3 | 25 | 1 | 83.73 | 83.03 |
+| 7 | 1e-5 | 3e-4 | 15 | 2 | 83.90 | 83.72 |
+
+- `cls` selects the default configuration (trial 0); `mt` selects trial 4 (λ = 1, 25 epochs).
+- Unlike DINOv2-base, DINOv2-reg is stable across configurations and seeds for both modes
+  (all trials within 81.6–84.6, seed spread ≤ 1.5 points), and the two modes are tied on validation.
+- Output: [`b3b_tune_dinov2reg/analysis.txt`](results/marimo/b3b_tune_dinov2reg/analysis.txt),
+  [`best_configs.json`](results/marimo/b3b_tune_dinov2reg/best_configs.json).
+
 ## Data protocol
 
 - **Only the official classification split** is used: train 1706 / val 341 / test 227
@@ -152,8 +174,8 @@ Default training settings:
 | `b2_dinov2reg_geofix` | DINOv2-with-registers × {cls, mt}; DINOv2 `mt_geo_d`; × seeds 0–2; checkpoints saved | ✅ done |
 | `b3_tune_dinov2` | DINOv2: equal-budget paired random search, 8 shared configs for cls & mt (mt adds λ ∈ {1, 2, 5, 10}), 2 search seeds, **val only** | ✅ done |
 | `b4a_final_dinov2` | DINOv2: best config per mode from `b3`, seeds 0–2, single test evaluation, checkpoints saved | ✅ done |
-| `b3b_tune_dinov2reg` | same search (same 8 configs, same λ draws, same seeds) on DINOv2-with-registers | queued |
-| `b4b_final_dinov2reg` | DINOv2-reg: best config per mode from `b3b`, seeds 0–2, single test evaluation, checkpoints saved | planned |
+| `b3b_tune_dinov2reg` | same search (same 8 configs, same λ draws, same seeds) on DINOv2-with-registers | ✅ done |
+| `b4b_final_dinov2reg` | DINOv2-reg: best config per mode from `b3b`, seeds 0–2, single test evaluation, checkpoints saved | ⏳ running |
 
 Per-run outputs are in [`results/marimo/`](results/marimo):
 - `res_<tag>_s<seed>.json`: metrics, test/val predictions, probabilities and predicted keypoints

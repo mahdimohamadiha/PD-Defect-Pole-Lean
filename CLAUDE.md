@@ -12,4 +12,6 @@
 - Keep a single compute notebook per platform and add new work to it. Do not create new notebooks.
 - Never stop or shut down a compute session without asking the user first.
 - Protocol: official classification split only; keypoints only for cls-train images (stem + size
-  match), masked for `Rejected`; augmentation = hflip + color jitter only.
+  match), masked for `Rejected`; augmentation = hflip + color jitter only
+  (`--aug base`, all main results). Exception approved by the user (2026-11-24) for the pre-registered H1
+  experiment: `--aug photo` adds photometric-only random gamma + low-light simulation (no geometric change).

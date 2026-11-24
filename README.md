@@ -156,6 +156,29 @@ are used here **for evaluation only**.
 - Tuned DINOv2 `mt` vs `cls` (test, summed over seeds): recall Leaned 79.6 vs 74.7, Rejected 86.5 vs 77.5,
   Straight 90.6 vs 94.5.
 
+## Pre-registered follow-up hypotheses
+
+Registered here **before** any run. Each uses the fixed protocol (official split, selection on validation,
+test evaluated once) and reports every outcome, including null results.
+
+**H1: darkness shortcut (batch `b5_h1_photo_dinov2`).** Phase 1b found that dark images are about 10× more
+frequent in train `Rejected`, and that valid dusk or night poles are wrongly predicted `Rejected`.
+- *Intervention:* `--aug photo`, which adds random gamma (0.5–2.0, p = 0.5) and low-light simulation
+  (intensity × 0.15–0.5 plus Gaussian noise, p = 0.25) on top of the base augmentation. The parameters were fixed
+  a priori and are not tuned.
+- *Setting:* DINOv2-base with the batch-3 hyper-parameters (not re-tuned, which is conservative), `cls` and `mt`,
+  seeds 0–2, with checkpoints.
+- *Primary outcome:* test Macro-F1 versus the tuned models of `b4a` (paired bootstrap, McNemar, Holm over 3 pairs).
+- *Secondary outcomes:* `Rejected` F1, and the false-`Rejected` rate on dark test images.
+- *Prediction:* `Rejected` F1 and Macro-F1 increase.
+
+**H3: data efficiency.** `cls` vs `mt` trained on 10 / 25 / 50% of train (stratified subsets fixed by seed).
+Prediction: the `mt` gain grows as data shrinks. The design will be detailed here before it runs.
+
+**H2: ambiguity-aware soft labels.** Soft Leaned/Straight targets from the GT axis angle around the ≈ 3° implicit
+threshold, for train images with keypoints. Prediction: fewer errors in the 2–6° band and better calibration.
+The design will be detailed here before it runs.
+
 ## Data protocol
 
 - **Only the official classification split** is used: train 1706 / val 341 / test 227

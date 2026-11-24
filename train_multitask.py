@@ -71,9 +71,24 @@ def build_index(root):
     return idx
 
 
+def photometric(img):
+    """H1 (pre-registered): extra photometric-only augmentation against the darkness shortcut for 'Rejected'.
+    Geometry is untouched, so labels and keypoints stay valid. Fixed a priori (not tuned):
+      * random gamma in [0.5, 2.0] (log-uniform), p = 0.5
+      * low-light simulation, p = 0.25: intensity x U(0.15, 0.5), then Gaussian noise (sigma U(0.01, 0.04))
+    """
+    x = np.asarray(img, dtype=np.float32) / 255.0
+    if random.random() < 0.5:
+        x = x ** math.exp(random.uniform(math.log(0.5), math.log(2.0)))
+    if random.random() < 0.25:
+        x = x * random.uniform(0.15, 0.5)
+        x = x + random.uniform(0.01, 0.04) * torch.randn(x.shape).numpy()   # torch RNG: seeded per worker
+    return Image.fromarray((np.clip(x, 0, 1) * 255).astype(np.uint8))
+
+
 class PoleDS(Dataset):
-    def __init__(self, items, size, train):
-        self.items, self.size, self.train = items, size, train
+    def __init__(self, items, size, train, aug="base"):
+        self.items, self.size, self.train, self.aug = items, size, train, aug
         import torchvision.transforms as T
         self.cj = T.ColorJitter(0.3, 0.3, 0.2, 0.02)
         self.norm = T.Compose([T.ToTensor(), T.Normalize(MEAN, STD)])
@@ -88,6 +103,8 @@ class PoleDS(Dataset):
         m = np.float32(k is not None)
         if self.train:
             img = self.cj(img)
+            if self.aug == "photo":
+                img = photometric(img)
             if random.random() < 0.5:           # hflip is label-preserving (lean is symmetric)
                 img = img.transpose(Image.FLIP_LEFT_RIGHT)
                 kp[[0, 2]] = 1 - kp[[0, 2]]
@@ -150,7 +167,7 @@ def evaluate(model, dl, dev, full=False):
 def run(args, seed, idx):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    mk = lambda sp, tr: DataLoader(PoleDS(idx[sp], args.size, tr), batch_size=args.bs, shuffle=tr,
+    mk = lambda sp, tr: DataLoader(PoleDS(idx[sp], args.size, tr, args.aug), batch_size=args.bs, shuffle=tr,
                                    num_workers=args.workers, drop_last=tr, persistent_workers=args.workers > 0)
     tr, va = mk("train", True), mk("val", False)
     te = None if args.no_test else mk("test", False)
@@ -222,6 +239,8 @@ if __name__ == "__main__":
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--tag", default=None, help="experiment name stored in results (default: mode)")
     ap.add_argument("--ckpt_dir", default=None, help="save best checkpoint (fp16) per run here")
+    ap.add_argument("--aug", default="base", choices=["base", "photo"],
+                    help="base = hflip + colour jitter; photo = base + random gamma + low-light simulation (H1)")
     ap.add_argument("--no_test", action="store_true", help="skip the test split entirely (hyper-parameter search)")
     ap.add_argument("--data_dir", default="/kaggle/working/pd-defect", help="download target (--root should be <data_dir>/pole_lean_assessment)")
     a = ap.parse_args()

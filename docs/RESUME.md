@@ -22,7 +22,7 @@ Last updated: 2026-11-23, after batch `b4a_final_dinov2`.
 
 ## Next
 1. ✅ `b3b_tune_dinov2reg` done (cls → trial 0 default, mt → trial 4, λ=1). Plan: `tools/plans/b3b_tune_dinov2reg.py`.
-2. ⏳ (started 05:47 UTC 2026-11-24) `b4b_final_dinov2reg`: tuned DINOv2-reg cls / mt (6 runs, ~40 min). Plan: `tools/plans/b4b_final_dinov2reg.py`.
+2. ✅ `b4b_final_dinov2reg` done (06:18 UTC 2026-11-24); 6 checkpoints on HF; README + HF card updated.
    It reads `results/b3b_tune_dinov2reg/best_configs.json` automatically.
 3. Paper-side analyses (no GPU needed):
    - the rule baseline "predicted keypoint angle > 10°" (as in arXiv:2610.17620) vs. the classifiers;

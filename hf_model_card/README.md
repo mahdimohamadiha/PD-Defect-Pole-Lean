@@ -20,7 +20,7 @@ on the `pole_lean_assessment` subset of [PD-Defect](https://huggingface.co/datas
 A ViT backbone is fully fine-tuned for classification, optionally with an auxiliary head that regresses
 the pole axis (bottom and top keypoints).
 
-> **Work in progress.** This card is updated as new experiment batches finish.
+> **Status:** all main experiments are complete. The card may still change while the accompanying paper is written.
 
 ## Checkpoints in this repository
 
@@ -28,6 +28,8 @@ the pole axis (bottom and top keypoints).
 |---|---|---|
 | **`dinov2_tuned_mt`** (`b4a_final_dinov2/`) | DINOv2 (base) | classification + keypoint loss, tuned (lr 1e-5 / 3e-4, 15 ep, λ = 2) |
 | `dinov2_tuned_cls` (`b4a_final_dinov2/`) | DINOv2 (base) | classification only, tuned (lr 1e-5 / 3e-4, 15 ep) |
+| `dinov2reg_tuned_cls` (`b4b_final_dinov2reg/`) | DINOv2 with registers (base) | classification only, tuned (selected config = default: lr 2e-5 / 1e-3, 15 ep) |
+| `dinov2reg_tuned_mt` (`b4b_final_dinov2reg/`) | DINOv2 with registers (base) | classification + keypoint loss, tuned (lr 2e-5 / 3e-3, 25 ep, λ = 1) |
 | `dinov2reg_cls` | DINOv2 with registers (base) | classification loss only |
 | `dinov2reg_mt` | DINOv2 with registers (base) | + auxiliary keypoint loss (λ = 5) |
 | `dinov2_mt_geo_d` | DINOv2 (base) | `mt` + classifier also sees the geometry of the predicted axis (detached keypoints) |
@@ -39,14 +41,19 @@ The tuned DINOv2 checkpoints above replace them.
 
 Official classification test split (227 images), mean ± std over 3 seeds (0, 1, 2).
 
-**Tuned DINOv2** (hyper-parameters selected on validation only, with an equal budget for both modes):
+**Tuned models** (hyper-parameters selected on validation only, with an equal budget for both modes):
 
 | tag | Accuracy | Macro-F1 | Macro-F1 of 3-seed majority vote |
 |---|---|---|---|
 | **`dinov2_tuned_mt`** | **86.93 ± 2.17** | **84.72 ± 2.29** | **87.37** |
 | `dinov2_tuned_cls` | 86.34 ± 0.76 | 83.50 ± 0.67 | 83.30 |
+| `dinov2reg_tuned_cls` | 83.99 ± 2.22 | 81.31 ± 2.64 | 81.47 |
+| `dinov2reg_tuned_mt` | 83.26 ± 0.88 | 79.97 ± 0.97 | 83.60 |
 
-`mt` vs `cls`: +1.23 Macro-F1 (paired bootstrap 95% CI [−2.0, +4.7]). The difference is not significant.
+`mt` vs `cls` (paired bootstrap 95% CI of Δ Macro-F1): DINOv2 +1.23 [−2.0, +4.7]; DINOv2 with registers
+−1.34 [−3.9, +1.2]. Neither difference is significant: after tuning, the keypoint loss leaves classification
+quality unchanged while adding a pole-axis output. Re-running an identical configuration (same seeds) changed
+Macro-F1 by about 1 point on average, which is the same size as these differences.
 
 **Default hyper-parameters** (lr 2e-5 / 1e-3, 15 epochs, λ = 5):
 
@@ -59,7 +66,7 @@ Official classification test split (227 images), mean ± std over 3 seeds (0, 1,
 | DINOv2 `mt` (no checkpoint) | 85.90 ± 0.44 | 83.41 ± 0.94 |
 
 The auxiliary keypoint loss helps DINOv2 (+4.6 Macro-F1, 95% CI [+2.0, +7.5]) but hurts DINOv2 with
-registers (−3.7, CI [−6.6, −1.0]) at these untuned settings. Tuning for DINOv2-with-registers is planned.
+registers (−3.7, CI [−6.6, −1.0]) at these untuned settings. Both effects largely disappear after tuning (see above).
 
 The dataset card reports a DINOv3 ViT-B/16 baseline of 84.14 Acc / 81.74 Macro-F1. This value lies inside
 our confidence intervals, so no claim of outperforming it is made.
@@ -68,6 +75,7 @@ our confidence intervals, so no claim of outperforming it is made.
 
 ```
 b4a_final_dinov2/<tag>_s<seed>.pt        tuned DINOv2, seeds 0, 1, 2
+b4b_final_dinov2reg/<tag>_s<seed>.pt     tuned DINOv2 with registers, seeds 0, 1, 2
 b2_dinov2reg_geofix/<tag>_s<seed>.pt     default settings, seeds 0, 1, 2
 ```
 

@@ -5,36 +5,46 @@ Multi-task learning for **utility-pole lean assessment** (Leaned / Straight / Re
 CC BY 4.0). A ViT backbone is fine-tuned for 3-way classification, with an auxiliary head that
 regresses the pole axis (bottom and top keypoints).
 
-> **Status:** work in progress. DINOv2 is complete (default runs, validation-only tuning, final tuned test
-> evaluation). Next: the same tuning and final evaluation for DINOv2-with-registers. Numbers below are
-> updated at every stage.
+> **Status:** all main experiments are complete (default runs, validation-only equal-budget tuning and the
+> final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers). Remaining work is analysis
+> without new training (rule baseline on predicted keypoint angle, label-subjectivity analysis) and the paper.
 
-## Headline: tuned DINOv2-base (final)
+## Headline: tuned models (final)
 
-Hyper-parameters selected on validation only (batch 3; same configuration for both modes: lr 1e-5 / 3e-4,
-15 epochs, λ = 2). Re-trained with seeds 0–2 and evaluated once on the official test split (227 images):
+Hyper-parameters selected on validation only (batches 3 / 3b, equal budget per mode), re-trained with seeds
+0–2 and evaluated **once** on the official test split (227 images). Mean ± std over seeds:
 
-| model | Acc | Macro-F1 | F1 Leaned | F1 Straight | F1 Rejected | majority-vote Macro-F1 |
-|---|---|---|---|---|---|---|
-| `cls` (tuned) | 86.34 ± 0.76 | 83.50 ± 0.67 | 78.8 | 91.3 | 80.4 | 83.30 |
-| **`mt` (tuned)** | **86.93 ± 2.17** | **84.72 ± 2.29** | **81.5** | 91.2 | **81.4** | **87.37** |
-| dataset-card baseline (DINOv3 ViT-B/16)\* | 84.14 | 81.74 | – | – | – | – |
+| backbone | model | selected config (lr bb / lr head / epochs / λ) | Acc | Macro-F1 | F1 Leaned | F1 Straight | F1 Rejected | maj.-vote Macro-F1 |
+|---|---|---|---|---|---|---|---|---|
+| DINOv2-base | `cls` | 1e-5 / 3e-4 / 15 / – | 86.34 ± 0.76 | 83.50 ± 0.67 | 78.8 | **91.3** | 80.4 | 83.30 |
+| DINOv2-base | **`mt`** | 1e-5 / 3e-4 / 15 / 2 | **86.93 ± 2.17** | **84.72 ± 2.29** | **81.5** | 91.2 | **81.4** | **87.37** |
+| DINOv2-reg-base | `cls` | 2e-5 / 1e-3 / 15 / – (= default) | 83.99 ± 2.22 | 81.31 ± 2.64 | 77.9 | 89.1 | 76.9 | 81.47 |
+| DINOv2-reg-base | `mt` | 2e-5 / 3e-3 / 25 / 1 | 83.26 ± 0.88 | 79.97 ± 0.97 | 75.6 | 89.2 | 75.1 | 83.60 |
+| DINOv3 ViT-B/16 | dataset-card baseline\* | – | 84.14 | 81.74 | – | – | – | – |
 
-| comparison | Δ Macro-F1 | 95% CI | McNemar p (Holm) |
+| comparison (B vs A) | Δ Macro-F1 | 95% CI | McNemar p (Holm) |
 |---|---|---|---|
-| tuned `mt` vs tuned `cls` | +1.23 | [−2.01, +4.70] | 0.24 (0.29) |
-| tuned `cls` vs default `cls` | **+4.72** | [+1.50, +8.37] | 0.041 (0.12) |
-| tuned `mt` vs default `mt` | +1.31 | [−1.43, +4.11] | 0.14 (0.29) |
+| DINOv2: tuned `mt` vs tuned `cls` | +1.23 | [−2.01, +4.70] | 0.24 (0.29) |
+| DINOv2-reg: tuned `mt` vs tuned `cls` | −1.34 | [−3.93, +1.15] | 0.24 (0.71) |
+| DINOv2: tuned `cls` vs default `cls` | **+4.72** | [+1.50, +8.37] | 0.041 (0.12) |
+| DINOv2-reg: re-run of the default `cls` config (b4b vs b2) | −1.06 | [−3.63, +1.61] | 0.33 (0.71) |
+| `cls`: DINOv2-reg vs DINOv2 (both tuned) | −2.19 | [−5.48, +1.09] | 0.25 (0.71) |
+| `mt`: DINOv2-reg vs DINOv2 (both tuned) | **−4.76** | [−7.98, −1.94] | 0.12 (0.47) |
 
-- After equal-budget tuning, `mt` is ahead on every test metric, but the gap (+1.2 Macro-F1) is **not
-  significant**. The large batch-1 gap (+4.6) came mostly from the default settings being poor for `cls`:
-  tuning helped `cls` by +4.7 and `mt` by only +1.3.
-- On validation, `mt` was much less sensitive to hyper-parameters and seeds. On test, at the tuned setting, its
-  seed spread is larger than that of `cls` (± 2.3 vs ± 0.7), so the robustness claim must be stated for
-  the default/untuned regime only.
-- Both tuned models exceed the dataset-card numbers, but the card value lies inside our CIs.
-- Output: [`b4a_final_dinov2/analysis.txt`](results/marimo/b4a_final_dinov2/analysis.txt).
-
+Takeaways:
+- **After equal-budget tuning, the auxiliary keypoint loss gives no significant change in classification**
+  on either backbone (+1.2 on DINOv2, −1.3 on DINOv2-reg; both CIs contain 0). The large default-setting
+  effects (+4.6 / −3.7, below) were mostly caused by untuned hyper-parameters.
+- **Run-to-run noise is of the same size as these effects.** For DINOv2-reg, the search selected the default
+  configuration for `cls`, so b4b re-ran exactly the b2 setting (same seeds). Non-deterministic GPU kernels
+  alone changed the test Macro-F1 by −1.06 on average (per seed: +1.9, −2.6, −2.5).
+- After tuning, **DINOv2-base is the better backbone** (significant for `mt` under the bootstrap), reversing
+  the default-setting ranking of the `cls` baselines.
+- The joint model still gives pole-axis keypoints at no extra inference cost, with equal classification
+  quality. The best single configuration is tuned DINOv2 `mt` (Macro-F1 84.72; 87.37 with a 3-seed majority vote).
+- All tuned models are within the 95% CI of the dataset-card baseline, so we make no claim of beating it.
+- Output: [`b4a_final_dinov2/analysis.txt`](results/marimo/b4a_final_dinov2/analysis.txt),
+  [`b4b_final_dinov2reg/analysis.txt`](results/marimo/b4b_final_dinov2reg/analysis.txt).
 
 ## Results with default hyper-parameters (batches 1–2)
 
@@ -175,7 +185,7 @@ Default training settings:
 | `b3_tune_dinov2` | DINOv2: equal-budget paired random search, 8 shared configs for cls & mt (mt adds λ ∈ {1, 2, 5, 10}), 2 search seeds, **val only** | ✅ done |
 | `b4a_final_dinov2` | DINOv2: best config per mode from `b3`, seeds 0–2, single test evaluation, checkpoints saved | ✅ done |
 | `b3b_tune_dinov2reg` | same search (same 8 configs, same λ draws, same seeds) on DINOv2-with-registers | ✅ done |
-| `b4b_final_dinov2reg` | DINOv2-reg: best config per mode from `b3b`, seeds 0–2, single test evaluation, checkpoints saved | ⏳ running |
+| `b4b_final_dinov2reg` | DINOv2-reg: best config per mode from `b3b`, seeds 0–2, single test evaluation, checkpoints saved | ✅ done |
 
 Per-run outputs are in [`results/marimo/`](results/marimo):
 - `res_<tag>_s<seed>.json`: metrics, test/val predictions, probabilities and predicted keypoints

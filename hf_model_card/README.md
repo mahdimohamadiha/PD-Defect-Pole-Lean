@@ -100,6 +100,9 @@ tuned model with the same mode):
 - *Explainability:* the auxiliary keypoint loss does not concentrate Grad-CAM or CLS attention on the pole. The
   DINOv2-with-registers models attend to the pole much more consistently (the attention peak falls on the pole in
   86–88% of images vs 26–49%), yet they are the less accurate backbone here.
+- *Occlusion test:* blurring the pole flips about half of the predictions of every model, against 2–3% for a
+  random region of the same size. Keypoint supervision increases this reliance on the pole for DINOv2 with
+  registers (significant), but not significantly for DINOv2.
 - *Photometric augmentation* (random gamma and low-light simulation) does not help.
 - *Data efficiency:* with 10 / 25 / 50% of the training images, `mt` and `cls` stay within 1 point of each other
   (no checkpoints).

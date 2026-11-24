@@ -1,0 +1,38 @@
+test L/S images with a GT pole box: 143
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4387.72it/s]
+dinov2_tuned_cls s0: cam_in_box 0.052 att_in_box 0.470 n_art 6.6 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4202.71it/s]
+dinov2_tuned_cls s1: cam_in_box 0.099 att_in_box 0.372 n_art 6.8 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4732.47it/s]
+dinov2_tuned_cls s2: cam_in_box 0.142 att_in_box 0.390 n_art 9.2 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4734.79it/s]
+dinov2_tuned_mt s0: cam_in_box 0.056 att_in_box 0.513 n_art 5.3 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4006.62it/s]
+dinov2_tuned_mt s1: cam_in_box 0.061 att_in_box 0.312 n_art 6.4 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4356.06it/s]
+dinov2_tuned_mt s2: cam_in_box 0.131 att_in_box 0.305 n_art 5.7 box_area 0.091
+Loading weights:   0%|          | 0/224 [00:00<?, ?it/s]Loading weights: 100%|██████████| 224/224 [00:00<00:00, 4307.57it/s]
+dinov2reg_tuned_cls s0: cam_in_box 0.134 att_in_box 0.658 n_art 0.0 box_area 0.091
+Loading weights:   0%|          | 0/224 [00:00<?, ?it/s]Loading weights: 100%|██████████| 224/224 [00:00<00:00, 4503.20it/s]
+dinov2reg_tuned_cls s1: cam_in_box 0.135 att_in_box 0.537 n_art 0.0 box_area 0.091
+Loading weights:   0%|          | 0/224 [00:00<?, ?it/s]Loading weights: 100%|██████████| 224/224 [00:00<00:00, 2482.91it/s]
+dinov2reg_tuned_cls s2: cam_in_box 0.058 att_in_box 0.453 n_art 0.0 box_area 0.091
+Loading weights:   0%|          | 0/224 [00:00<?, ?it/s]Loading weights: 100%|██████████| 224/224 [00:00<00:00, 4410.44it/s]
+dinov2reg_tuned_mt s0: cam_in_box 0.096 att_in_box 0.619 n_art 0.0 box_area 0.091
+Loading weights:   0%|          | 0/224 [00:00<?, ?it/s]Loading weights: 100%|██████████| 224/224 [00:00<00:00, 4089.96it/s]
+dinov2reg_tuned_mt s1: cam_in_box 0.154 att_in_box 0.530 n_art 0.0 box_area 0.091
+Loading weights:   0%|          | 0/224 [00:00<?, ?it/s]Loading weights: 100%|██████████| 224/224 [00:00<00:00, 4314.49it/s]
+dinov2reg_tuned_mt s2: cam_in_box 0.078 att_in_box 0.492 n_art 0.0 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4132.39it/s]
+dinov2_soft_cls s0: cam_in_box 0.056 att_in_box 0.494 n_art 9.7 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4326.26it/s]
+dinov2_soft_cls s1: cam_in_box 0.074 att_in_box 0.387 n_art 10.4 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4274.70it/s]
+dinov2_soft_cls s2: cam_in_box 0.114 att_in_box 0.378 n_art 8.5 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4372.78it/s]
+dinov2_soft_mt s0: cam_in_box 0.055 att_in_box 0.476 n_art 5.0 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4206.66it/s]
+dinov2_soft_mt s1: cam_in_box 0.060 att_in_box 0.334 n_art 7.6 box_area 0.091
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 4346.67it/s]
+dinov2_soft_mt s2: cam_in_box 0.136 att_in_box 0.430 n_art 9.6 box_area 0.091
+done 2574

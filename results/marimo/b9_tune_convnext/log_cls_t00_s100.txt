@@ -1,0 +1,12 @@
+{'train': 1706, 'val': 341, 'test': 227} train imgs with kp: 1149 | size mismatches dropped: 87
+Loading weights:   0%|          | 0/342 [00:00<?, ?it/s]Loading weights: 100%|██████████| 342/342 [00:00<00:00, 14314.32it/s]
+[transformers] [1mConvNextModel LOAD REPORT[0m from: facebook/convnext-base-224-22k
+Key               | Status     |  | 
+------------------+------------+--+-
+classifier.bias   | UNEXPECTED |  | 
+classifier.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+/marimo/train_multitask.py:248: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")

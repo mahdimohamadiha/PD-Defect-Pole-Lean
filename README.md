@@ -483,6 +483,23 @@ repeated on a convolutional network of similar size.
     with standard Grad-CAM on the last stage and its deletion faithfulness. Attention-based methods do not apply
     to a CNN.
 
+**H4b (exploratory follow-up, written after the b10 test results and before any run).** In b10 the ConvNeXt
+keypoint head did not learn the pole axis: on the 143 test images with GT keypoints the predicted angle
+correlates only 0.13 with the GT angle (MAE 3.28°), against 0.95 for tuned DINOv2 `mt` (`results/analysis/phase1`).
+The likely cause is the head design: the two keypoint queries read the tokens through cross-attention and
+regress coordinates from the weighted average, which works for ViT tokens (they carry the position embedding)
+but not for ConvNeXt last-stage cells, which carry little absolute position. The b10 `mt` model therefore does
+not test keypoint supervision on a CNN properly.
+- *Change (batch `b11_convnext_kppos`):* `--kp_pos sincos` adds a fixed 2-D sin-cos position code to the
+  LayerNorm-ed tokens seen by the keypoint cross-attention only. Classification features, losses, data and
+  augmentation are unchanged. Default `none` keeps all earlier models identical.
+- *Runs:* ConvNeXt `mt` with the b10-selected configuration (lr 2e-5 / 3e-3, 25 epochs, λ = 1; no new search),
+  seeds 0–2, tested once.
+- *Outcomes:* (1) keypoint quality on test (angle correlation and MAE); the fix counts as working if the
+  correlation is ≥ 0.9. (2) Δ Macro-F1 vs ConvNeXt `cls` and vs b10 `mt` (paired bootstrap, McNemar).
+- *Status:* exploratory, because it was designed after seeing b10 test results; it will be reported as such,
+  whatever the outcome, and does not replace the pre-registered H4 result.
+
 ## Data protocol
 
 - **Only the official classification split** is used: train 1706 / val 341 / test 227

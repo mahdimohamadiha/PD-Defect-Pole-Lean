@@ -142,7 +142,7 @@ def deletion_set(im_a, bl_a, order, T, g):
 
 def load(ck, MTNet, dev):
     c = torch.load(ck, map_location="cpu"); ar = c["args"]
-    model = MTNet(ar["backbone"], ar["size"], ar["mode"])
+    model = MTNet(ar["backbone"], ar["size"], ar["mode"], kp_pos=ar.get("kp_pos", "none"))
     model.load_state_dict({k: v.float() for k, v in c["state_dict"].items()})
     model.bb.config._attn_implementation = "eager"
     return model.to(dev).eval(), ar

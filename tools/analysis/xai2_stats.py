@@ -1,15 +1,21 @@
 """X2 statistics (pre-registered in README), on xai2_rows.json (+ xai2_sanity.json).
 Per image, metrics are averaged over seeds 0-2. Comparisons are paired over images: bootstrap 95% CI of the mean
 difference (10k) + Wilcoxon signed-rank test, with Holm correction inside each family.
-Usage: python tools/analysis/xai2_stats.py --dir results/marimo/x2_xai --out results/analysis/xai2"""
+Usage: python tools/analysis/xai2_stats.py --dir results/marimo/x2_xai --out results/analysis/xai2
+       H4 (ConvNeXt; Grad-CAM only, compared with the DINOv2 rows):
+       python tools/analysis/xai2_stats.py --dir results/marimo/x2_convnext --extra_dir results/marimo/x2_xai \
+              --family convnext --out results/analysis/xai2_convnext"""
 import os, json, argparse
 import numpy as np
 from scipy.stats import wilcoxon
 
-METHODS = ["att", "rollout", "chefer", "gradcam"]
+ALL_METHODS = ["att", "rollout", "chefer", "gradcam"]
 PRIMARY = [("dinov2_tuned_cls", "dinov2_tuned_mt"), ("dinov2reg_tuned_cls", "dinov2reg_tuned_mt")]
 SECONDARY = [("dinov2_tuned_cls", "dinov2_soft_cls"), ("dinov2_tuned_mt", "dinov2_soft_mt"),
              ("dinov2_tuned_cls", "dinov2reg_tuned_cls"), ("dinov2_tuned_mt", "dinov2reg_tuned_mt")]
+FAMILIES = {"vit": (PRIMARY, SECONDARY),
+            "convnext": ([("convnext_tuned_cls", "convnext_tuned_mt")],
+                         [("dinov2_tuned_cls", "convnext_tuned_cls"), ("dinov2_tuned_mt", "convnext_tuned_mt")])}
 CL = ["Leaned", "Straight", "Rejected"]
 
 
@@ -24,12 +30,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", default="results/marimo/x2_xai")
     ap.add_argument("--out", default="results/analysis/xai2")
+    ap.add_argument("--extra_dir", default=None, help="rows of other models, used only in the secondary comparisons")
+    ap.add_argument("--family", default="vit", choices=list(FAMILIES))
     a = ap.parse_args()
+    PRIMARY, SECONDARY = FAMILIES[a.family]
     os.makedirs(a.out, exist_ok=True)
     rows = json.load(open(os.path.join(a.dir, "xai2_rows.json")))
+    own = {r["tag"] for r in rows}
+    if a.extra_dir:
+        need = {t for pair in SECONDARY for t in pair} - own
+        rows += [r for r in json.load(open(os.path.join(a.extra_dir, "xai2_rows.json"))) if r["tag"] in need]
     for r in rows:
         r["reliance"] = r["drop_pole"] - r["drop_rand"] if r["n_rand"] == 5 else np.nan
     tags = sorted({r["tag"] for r in rows})
+    METHODS = [m for m in ALL_METHODS if all(r.get(f"aoc_{m}") is not None for r in rows if r["tag"] in own)]
     files = sorted({r["file"] for r in rows})
     def per_image(tag, key, only_full=False):
         out = []
@@ -63,19 +77,19 @@ def main():
         m = rep["models"][t]
         P(f"{t:22s} {m['reliance']:9.3f} {m['drop_pole']:9.3f} {m['drop_rand']:9.3f} {100*m['flip_pole']:8.1f}% {100*m['flip_rand']:8.1f}% "
           f"{100*acc:5.1f}% {100*accc:6.1f}%")
-    P("\n-- PRIMARY: pole reliance, mt - cls (Holm over 2)")
+    P(f"\n-- PRIMARY: pole reliance, mt - cls (Holm over {len(PRIMARY)})")
     res = [compare(A, B, "reliance", True) for A, B in PRIMARY]
     for (A, B), r, ad in zip(PRIMARY, res, holm([r["p"] for r in res])):
         r["holm_p"] = float(ad); rep.setdefault("primary", {})[f"{B}-{A}"] = r
         P(f"   {B} - {A}: {r['diff']:+.3f} CI95 [{r['ci'][0]:+.3f}, {r['ci'][1]:+.3f}]  Wilcoxon p={r['p']:.4f}  Holm p={ad:.4f}  (n={r['n']})")
-    P("\n-- SECONDARY: pole reliance (two-sided, Holm over 4)")
+    P(f"\n-- SECONDARY: pole reliance (two-sided, Holm over {len(SECONDARY)})")
     res = [compare(A, B, "reliance", True) for A, B in SECONDARY]
     for (A, B), r, ad in zip(SECONDARY, res, holm([r["p"] for r in res])):
         r["holm_p"] = float(ad); rep.setdefault("secondary", {})[f"{B}-{A}"] = r
         P(f"   {B} - {A}: {r['diff']:+.3f} CI95 [{r['ci'][0]:+.3f}, {r['ci'][1]:+.3f}]  Wilcoxon p={r['p']:.4f}  Holm p={ad:.4f}")
     P("\n-- attribution methods: energy-in-box and deletion faithfulness (area over the log-prob curve; higher = more faithful)")
     P(f"{'model':22s} " + " ".join(f"{'box_' + m:>12s}" for m in METHODS) + " | " + " ".join(f"{'aoc_' + m:>12s}" for m in METHODS + ["random"]))
-    for t in tags:
+    for t in sorted(own):
         rr = [r for r in rows if r["tag"] == t]
         bx = {m: float(np.nanmean([r[f"in_box_{m}"] for r in rr])) for m in METHODS}
         ao = {m: float(np.mean([r[f"aoc_{m}"] for r in rr])) for m in METHODS + ["random"]}
@@ -84,7 +98,7 @@ def main():
     P("\n-- faithfulness, method - random order (all models and seeds pooled per image; paired over images)")
     allt = "__all__"
     for m in METHODS:
-        d = np.array([np.mean([r[f"aoc_{m}"] - r["aoc_random"] for r in rows if r["file"] == f]) for f in files])
+        d = np.array([np.mean([r[f"aoc_{m}"] - r["aoc_random"] for r in rows if r["file"] == f and r["tag"] in own]) for f in files])
         bs = d[rng.integers(0, len(d), (10000, len(d)))].mean(1)
         rep.setdefault("faithfulness_vs_random", {})[m] = {"diff": float(d.mean()), "ci": [float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))],
                                                           "p": float(wilcoxon(d).pvalue)}
@@ -94,7 +108,7 @@ def main():
     rep["most_faithful_method"] = best
     P(f"   most faithful (largest mean gain over random): {best}")
     sp = os.path.join(a.dir, "xai2_sanity.json")
-    if os.path.exists(sp):
+    if os.path.exists(sp) and a.family == "vit":
         s = json.load(open(sp)); rep["sanity"] = s
         P("\n-- sanity check (head + last 4 blocks re-initialised; Spearman original vs randomised map, median over images;"
           " high = insensitive to the model)")

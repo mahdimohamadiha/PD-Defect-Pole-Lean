@@ -163,7 +163,7 @@ class PoleDS(Dataset):
 
 # ---------------------------------------------------------------- model
 class MTNet(nn.Module):
-    def __init__(self, name, size, mode, n_cls=3):
+    def __init__(self, name, size, mode, n_cls=3, kp_pos="none"):
         super().__init__()
         from transformers import AutoModel
         self.bb = AutoModel.from_pretrained(name)
@@ -178,9 +178,23 @@ class MTNet(nn.Module):
         self.q = nn.Parameter(torch.randn(2, d) * 0.02)           # bottom / top queries
         self.attn = nn.MultiheadAttention(d, 8, batch_first=True)
         self.kp_head = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, d // 2), nn.GELU(), nn.Linear(d // 2, 2))
+        # H4b: ConvNeXt features carry little absolute position, so the keypoint queries cannot localise the pole.
+        # "sincos" adds a fixed 2-D sin-cos position code to the (LayerNorm-ed) tokens seen by the keypoint
+        # cross-attention only; the classification features are unchanged. Default "none" = original model.
+        self.kp_pos = kp_pos
+        if kp_pos == "sincos":
+            self.kv_norm = nn.LayerNorm(d)
+            self.register_buffer("pos", self.sincos_2d(size // self.patch, d), persistent=False)
         geo_dim = {"mt_geo": 4, "mt_geo_d": 3}.get(mode, 0)
         self.cls_head = nn.Sequential(nn.LayerNorm(2 * d + geo_dim), nn.Dropout(0.2),
                                       nn.Linear(2 * d + geo_dim, n_cls))
+
+    @staticmethod
+    def sincos_2d(g, d):
+        ys, xs = torch.meshgrid(torch.arange(g, dtype=torch.float32), torch.arange(g, dtype=torch.float32), indexing="ij")
+        om = 1.0 / (100.0 ** (torch.arange(d // 4, dtype=torch.float32) / (d // 4)))
+        enc = [f(c.flatten()[:, None] * om[None]) for c in (xs, ys) for f in (torch.sin, torch.cos)]
+        return torch.cat(enc, 1)[None]                            # [1, g*g, d], row-major like the flattened map
 
     @staticmethod
     def geo_feats(kp):
@@ -198,7 +212,8 @@ class MTNet(nn.Module):
         else:
             h = self.bb(pixel_values=x).last_hidden_state
             cls_t, patches = h[:, 0], h[:, -self.n_patch:]        # skips register tokens if any
-        kq, _ = self.attn(self.q.unsqueeze(0).expand(x.size(0), -1, -1), patches, patches)
+        kv = self.kv_norm(patches) + self.pos.to(patches.dtype) if self.kp_pos == "sincos" else patches
+        kq, _ = self.attn(self.q.unsqueeze(0).expand(x.size(0), -1, -1), kv, kv)
         kp = torch.sigmoid(self.kp_head(kq)).flatten(1)           # [B,4] = xb,yb,xt,yt in [0,1]
         feat = [cls_t, patches.mean(1)]
         if self.mode == "mt_geo":
@@ -239,7 +254,7 @@ def run(args, seed, idx):
                                    num_workers=args.workers, drop_last=tr, persistent_workers=args.workers > 0)
     tr, va = mk("train", True), mk("val", False)
     te = None if args.no_test else mk("test", False)
-    model = MTNet(args.backbone, args.size, args.mode).to(dev)
+    model = MTNet(args.backbone, args.size, args.mode, kp_pos=args.kp_pos).to(dev)
     heads = [p for n, p in model.named_parameters() if not n.startswith("bb.")]
     opt = torch.optim.AdamW([{"params": model.bb.parameters(), "lr": args.lr_bb},
                              {"params": heads, "lr": args.lr_head}], weight_decay=0.05)
@@ -319,6 +334,8 @@ if __name__ == "__main__":
     ap.add_argument("--soft_tau", type=float, default=1.0, help="H2: sigmoid temperature (deg)")
     ap.add_argument("--soft_ctrl", default="none", choices=["none", "shuffle", "uniform"],
                     help="H2b controls: angle-shuffled soft targets / mass-matched uniform L-S smoothing")
+    ap.add_argument("--kp_pos", default="none", choices=["none", "sincos"],
+                    help="H4b: fixed 2-D position code for the keypoint cross-attention (for CNN backbones)")
     ap.add_argument("--no_test", action="store_true", help="skip the test split entirely (hyper-parameter search)")
     ap.add_argument("--data_dir", default="/kaggle/working/pd-defect", help="download target (--root should be <data_dir>/pole_lean_assessment)")
     a = ap.parse_args()

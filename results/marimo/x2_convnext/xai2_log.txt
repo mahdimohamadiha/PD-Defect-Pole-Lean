@@ -38,3 +38,25 @@ classifier.weight | UNEXPECTED |  |
 
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+convnext_tuned_mt_s0: pole reliance +2.155 | aoc_gradcam 4.411 aoc_random 0.924 | box_gradcam 0.553
+Loading weights:   0%|          | 0/342 [00:00<?, ?it/s]Loading weights: 100%|██████████| 342/342 [00:00<00:00, 13209.68it/s]
+[transformers] [1mConvNextModel LOAD REPORT[0m from: facebook/convnext-base-224-22k
+Key               | Status     |  | 
+------------------+------------+--+-
+classifier.bias   | UNEXPECTED |  | 
+classifier.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+convnext_tuned_mt_s1: pole reliance +2.158 | aoc_gradcam 4.729 aoc_random 0.933 | box_gradcam 0.570
+Loading weights:   0%|          | 0/342 [00:00<?, ?it/s]Loading weights: 100%|██████████| 342/342 [00:00<00:00, 13756.83it/s]
+[transformers] [1mConvNextModel LOAD REPORT[0m from: facebook/convnext-base-224-22k
+Key               | Status     |  | 
+------------------+------------+--+-
+classifier.bias   | UNEXPECTED |  | 
+classifier.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+convnext_tuned_mt_s2: pole reliance +2.585 | aoc_gradcam 6.937 aoc_random 1.378 | box_gradcam 0.553
+done 858

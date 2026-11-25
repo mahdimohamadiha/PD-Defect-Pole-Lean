@@ -1,0 +1,31 @@
+{'train': 1706, 'val': 341, 'test': 227} train imgs with kp: 1149 | size mismatches dropped: 87
+Loading weights:   0%|          | 0/342 [00:00<?, ?it/s]Loading weights: 100%|██████████| 342/342 [00:00<00:00, 14607.60it/s]
+[transformers] [1mConvNextModel LOAD REPORT[0m from: facebook/convnext-base-224-22k
+Key               | Status     |  | 
+------------------+------------+--+-
+classifier.bias   | UNEXPECTED |  | 
+classifier.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+/marimo/train_multitask.py:248: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
+/marimo/train_multitask.py:267: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scaler.step(opt); scaler.update(); sched.step()
+seed101 ep0 val acc 0.3284 macroF1 0.3406
+seed101 ep1 val acc 0.8094 macroF1 0.7810
+seed101 ep2 val acc 0.8123 macroF1 0.7770
+seed101 ep3 val acc 0.8446 macroF1 0.8052
+seed101 ep4 val acc 0.8358 macroF1 0.7958
+seed101 ep5 val acc 0.8270 macroF1 0.7946
+seed101 ep6 val acc 0.8358 macroF1 0.7991
+seed101 ep7 val acc 0.8387 macroF1 0.7999
+seed101 ep8 val acc 0.8504 macroF1 0.8118
+seed101 ep9 val acc 0.8416 macroF1 0.8018
+seed101 ep10 val acc 0.8475 macroF1 0.8088
+seed101 ep11 val acc 0.8475 macroF1 0.8095
+seed101 ep12 val acc 0.8446 macroF1 0.8067
+seed101 ep13 val acc 0.8446 macroF1 0.8067
+seed101 ep14 val acc 0.8446 macroF1 0.8067
+{'seed': 101, 'mode': 'cls', 'tag': 'cls_t01', 'backbone': 'facebook/convnext-base-224-22k', 'best_epoch': 8, 'val_macroF1': 0.8118482351218924, 'val_acc': 0.8504398826979472}
+val_macroF1 0.8118 +- 0.0000

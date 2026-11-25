@@ -1,0 +1,41 @@
+{'train': 1706, 'val': 341, 'test': 227} train imgs with kp: 1149 | size mismatches dropped: 87
+Loading weights:   0%|          | 0/342 [00:00<?, ?it/s]Loading weights: 100%|██████████| 342/342 [00:00<00:00, 16696.18it/s]
+[transformers] [1mConvNextModel LOAD REPORT[0m from: facebook/convnext-base-224-22k
+Key               | Status     |  | 
+------------------+------------+--+-
+classifier.bias   | UNEXPECTED |  | 
+classifier.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+/marimo/train_multitask.py:248: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
+/marimo/train_multitask.py:267: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scaler.step(opt); scaler.update(); sched.step()
+seed100 ep0 val acc 0.4663 macroF1 0.4259
+seed100 ep1 val acc 0.7771 macroF1 0.7043
+seed100 ep2 val acc 0.7566 macroF1 0.7115
+seed100 ep3 val acc 0.8270 macroF1 0.7953
+seed100 ep4 val acc 0.8123 macroF1 0.7698
+seed100 ep5 val acc 0.8152 macroF1 0.7873
+seed100 ep6 val acc 0.8328 macroF1 0.8026
+seed100 ep7 val acc 0.8299 macroF1 0.7935
+seed100 ep8 val acc 0.8270 macroF1 0.7844
+seed100 ep9 val acc 0.8299 macroF1 0.7932
+seed100 ep10 val acc 0.8299 macroF1 0.7889
+seed100 ep11 val acc 0.8328 macroF1 0.7871
+seed100 ep12 val acc 0.8328 macroF1 0.7958
+seed100 ep13 val acc 0.8416 macroF1 0.8049
+seed100 ep14 val acc 0.8387 macroF1 0.8015
+seed100 ep15 val acc 0.8358 macroF1 0.7993
+seed100 ep16 val acc 0.8211 macroF1 0.7866
+seed100 ep17 val acc 0.8387 macroF1 0.8021
+seed100 ep18 val acc 0.8416 macroF1 0.8041
+seed100 ep19 val acc 0.8416 macroF1 0.8048
+seed100 ep20 val acc 0.8358 macroF1 0.8029
+seed100 ep21 val acc 0.8358 macroF1 0.8004
+seed100 ep22 val acc 0.8416 macroF1 0.8077
+seed100 ep23 val acc 0.8416 macroF1 0.8077
+seed100 ep24 val acc 0.8416 macroF1 0.8077
+{'seed': 100, 'mode': 'mt', 'tag': 'mt_t05', 'backbone': 'facebook/convnext-base-224-22k', 'best_epoch': 22, 'val_macroF1': 0.8076885486177332, 'val_acc': 0.841642228739003}
+val_macroF1 0.8077 +- 0.0000

@@ -16,3 +16,26 @@ seed101 ep0 val acc 0.3372 macroF1 0.3420
 seed101 ep1 val acc 0.7449 macroF1 0.7091
 seed101 ep2 val acc 0.7713 macroF1 0.7237
 seed101 ep3 val acc 0.8270 macroF1 0.7911
+seed101 ep4 val acc 0.8240 macroF1 0.7632
+seed101 ep5 val acc 0.8182 macroF1 0.7697
+seed101 ep6 val acc 0.8240 macroF1 0.7840
+seed101 ep7 val acc 0.8182 macroF1 0.7807
+seed101 ep8 val acc 0.8299 macroF1 0.7872
+seed101 ep9 val acc 0.8387 macroF1 0.7886
+seed101 ep10 val acc 0.8358 macroF1 0.7941
+seed101 ep11 val acc 0.8328 macroF1 0.7778
+seed101 ep12 val acc 0.8240 macroF1 0.7697
+seed101 ep13 val acc 0.8240 macroF1 0.7615
+seed101 ep14 val acc 0.8328 macroF1 0.7845
+seed101 ep15 val acc 0.8152 macroF1 0.7552
+seed101 ep16 val acc 0.8270 macroF1 0.7816
+seed101 ep17 val acc 0.8152 macroF1 0.7655
+seed101 ep18 val acc 0.8211 macroF1 0.7699
+seed101 ep19 val acc 0.8182 macroF1 0.7679
+seed101 ep20 val acc 0.8211 macroF1 0.7722
+seed101 ep21 val acc 0.8211 macroF1 0.7722
+seed101 ep22 val acc 0.8211 macroF1 0.7722
+seed101 ep23 val acc 0.8211 macroF1 0.7722
+seed101 ep24 val acc 0.8211 macroF1 0.7722
+{'seed': 101, 'mode': 'cls', 'tag': 'cls_t05', 'backbone': 'facebook/convnext-base-224-22k', 'best_epoch': 10, 'val_macroF1': 0.7940789914026111, 'val_acc': 0.8357771260997068}
+val_macroF1 0.7941 +- 0.0000

@@ -26,7 +26,8 @@ CLASSES = ["Leaned", "Straight", "Rejected"]
 BINS = [0, 2, 4, 6, 10, 15, 90]
 TUNED = {"b4a_final_dinov2": ["dinov2_tuned_cls", "dinov2_tuned_mt"],
          "b4b_final_dinov2reg": ["dinov2reg_tuned_cls", "dinov2reg_tuned_mt"],
-         "b10_final_convnext": ["convnext_tuned_cls", "convnext_tuned_mt"]}
+         "b10_final_convnext": ["convnext_tuned_cls", "convnext_tuned_mt"],
+         "b11_convnext_kppos": ["convnext_kppos_mt"]}
 DEFAULT = {"b1_dinov2": ["cls", "mt"], "b2_dinov2reg_geofix": ["dinov2reg_cls", "dinov2reg_mt"]}
 
 

@@ -20,7 +20,8 @@ on the `pole_lean_assessment` subset of [PD-Defect](https://huggingface.co/datas
 A ViT backbone is fully fine-tuned for classification, optionally with an auxiliary head that regresses
 the pole axis (bottom and top keypoints).
 
-> **Status:** all main experiments are complete. The card may still change while the accompanying paper is written.
+> **Status:** all experiments are complete, including the follow-up and explainability analyses summarised below.
+> A paper describing the study is in preparation; this card may still change before it is published.
 
 ## Checkpoints in this repository
 
@@ -143,6 +144,15 @@ model.load_state_dict({k: v.float() for k, v in ck["state_dict"].items()})
 model.eval()
 logits, keypoints = model(pixel_values)   # keypoints: [B, 4] = x_bottom, y_bottom, x_top, y_top in [0, 1]
 ```
+
+## How these checkpoints were produced
+
+The study was carried out with Claude, an AI assistant developed by Anthropic, working as a research assistant
+under the authors' direction: it wrote and ran the training and analysis code, performed the statistical
+analyses and drafted the documentation, while the authors chose the study, approved every experimental design
+before it was run and checked the results. All runs were trained between 23 and 25 November 2026 on single-GPU
+cloud notebooks (about 4–7 minutes per run). Follow-up hypotheses were written down before the corresponding
+runs, and every outcome, including the null results, is reported on this card.
 
 ## Training data and protocol
 

@@ -69,3 +69,13 @@ the batch's existing results back into `/marimo/results/<batch>/`.
 - H2b `b8_h2b_ctrl_dinov2` done (18:00 UTC): replication +1.49 [−1.28, +4.44] n.s.; soft ≈ shuffled control → no angle-specific claim; calibration gain = smoothing. 12 ckpts on HF.
 - X1 (XAI energy-in-box) pre-registered; running in sandbox (`results/xai_x1`).
 - X1 done: mt does not increase energy-in-box (DINOv2 −1.5 pts, reg +0.1); Grad-CAM diffuse; CLS attention on pole 41–55% (chance 9%); DINOv2-reg attention pointing 86–88% vs DINOv2 26–49%, yet reg is less accurate.
+
+## Status 2026-11-25
+- All GPU work is done (b1–b8, X1, X2). Sandbox shut down by the user; everything is in `results/` and the
+  checkpoints are on HF (not linked in the paper yet).
+- Paper draft: `paper/` (arXiv `article` layout, Times New Roman figures from `paper/make_figures.py --font`).
+  Open items: code repository URL (placeholder, on purpose), Wang & Wei (EAAI 2026) summary, unverified bib
+  entries.
+- Next: the user runs `docs/citation_check_prompt.md` in Claude chat (browser) with the paper zip, then sends
+  back main.tex, references.bib and the report. Review every change against the report before merging, compile
+  and commit. Then the supervisor reviews the draft.

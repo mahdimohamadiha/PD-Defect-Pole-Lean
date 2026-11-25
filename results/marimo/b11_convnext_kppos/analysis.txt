@@ -1,0 +1,31 @@
+test images: 227 | bootstrap resamples: 10000
+
+== 1-2. per mode (mean +- std over seeds; 95% bootstrap CI of the seed-averaged metric)
+convnext_tuned_cls seeds=[0, 1, 2]
+   acc      82.82 +- 0.76  CI95 [78.26, 87.22]  card baseline 84.14 inside CI
+   macroF1  79.54 +- 0.77  CI95 [73.54, 84.79]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 77.04, 'Straight': 88.45, 'Rejected': 73.13} | majority vote: {'acc': 83.7, 'macroF1': 80.7}
+convnext_tuned_mt seeds=[0, 1, 2]
+   acc      82.53 +- 0.67  CI95 [77.83, 86.78]  card baseline 84.14 inside CI
+   macroF1  78.97 +- 0.66  CI95 [73.00, 84.14]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 76.58, 'Straight': 88.5, 'Rejected': 71.84} | majority vote: {'acc': 83.7, 'macroF1': 80.04}
+convnext_kppos_mt seeds=[0, 1, 2]
+   acc      81.20 +- 1.67  CI95 [76.51, 85.61]  card baseline 84.14 inside CI
+   macroF1  77.53 +- 1.53  CI95 [71.70, 82.64]  card baseline 81.74 inside CI
+   per-class F1: {'Leaned': 75.09, 'Straight': 87.63, 'Rejected': 69.88} | majority vote: {'acc': 83.7, 'macroF1': 80.47}
+
+== 2-3. pairwise: bootstrap CI of the difference (B - A) + exact McNemar
+convnext_kppos_mt vs convnext_tuned_cls:
+   dacc      -1.62  CI95 [-3.82, +0.59]  P(diff<=0)=0.934
+   dmacroF1  -2.01  CI95 [-4.65, +0.52]  P(diff<=0)=0.939
+   McNemar per seed  s0: b=10 c=8 p=0.815, s1: b=12 c=3 p=0.035, s2: b=7 c=7 p=1.000
+   McNemar maj.vote  b=6 c=6 p=1.0000  Holm-adj p=1.0000
+   (b = A right & B wrong, c = A wrong & B right)
+convnext_kppos_mt vs convnext_tuned_mt:
+   dacc      -1.32  CI95 [-3.08, +0.29]  P(diff<=0)=0.950
+   dmacroF1  -1.44  CI95 [-3.38, +0.38]  P(diff<=0)=0.938
+   McNemar per seed  s0: b=7 c=8 p=1.000, s1: b=14 c=5 p=0.064, s2: b=5 c=4 p=1.000
+   McNemar maj.vote  b=4 c=4 p=1.0000  Holm-adj p=1.0000
+   (b = A right & B wrong, c = A wrong & B right)
+
+saved /marimo/results/b11_convnext_kppos/analysis.json

@@ -21,3 +21,33 @@ seed2 ep5 val acc 0.8123 macroF1 0.7585
 seed2 ep6 val acc 0.8299 macroF1 0.7628
 seed2 ep7 val acc 0.8299 macroF1 0.7828
 seed2 ep8 val acc 0.8182 macroF1 0.7728
+seed2 ep9 val acc 0.8270 macroF1 0.7795
+seed2 ep10 val acc 0.8358 macroF1 0.7921
+seed2 ep11 val acc 0.8299 macroF1 0.7848
+seed2 ep12 val acc 0.8416 macroF1 0.7990
+seed2 ep13 val acc 0.8328 macroF1 0.7940
+seed2 ep14 val acc 0.8358 macroF1 0.7941
+seed2 ep15 val acc 0.8387 macroF1 0.7969
+seed2 ep16 val acc 0.8387 macroF1 0.7969
+seed2 ep17 val acc 0.8358 macroF1 0.7925
+seed2 ep18 val acc 0.8387 macroF1 0.7928
+seed2 ep19 val acc 0.8328 macroF1 0.7855
+seed2 ep20 val acc 0.8446 macroF1 0.7984
+seed2 ep21 val acc 0.8328 macroF1 0.7855
+seed2 ep22 val acc 0.8358 macroF1 0.7907
+seed2 ep23 val acc 0.8358 macroF1 0.7907
+seed2 ep24 val acc 0.8358 macroF1 0.7907
+              precision    recall  f1-score   support
+
+      Leaned     0.7705    0.7581    0.7642        62
+    Straight     0.8626    0.8828    0.8726       128
+    Rejected     0.7429    0.7027    0.7222        37
+
+    accuracy                         0.8194       227
+   macro avg     0.7920    0.7812    0.7863       227
+weighted avg     0.8179    0.8194    0.8185       227
+
+{'seed': 2, 'mode': 'mt', 'tag': 'convnext_kppos_mt', 'backbone': 'facebook/convnext-base-224-22k', 'best_epoch': 12, 'val_macroF1': 0.7989579075090733, 'val_acc': 0.841642228739003, 'test_acc': 0.8193832599118943, 'test_macroF1': 0.7863455790285059, 'checkpoint': 'convnext_kppos_mt_s2.pt'}
+val_macroF1 0.7990 +- 0.0000
+test_acc 0.8194 +- 0.0000
+test_macroF1 0.7863 +- 0.0000

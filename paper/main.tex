@@ -17,6 +17,7 @@
 \usetikzlibrary{positioning,arrows.meta,fit,backgrounds}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xurl}
+\usepackage[section]{placeins}
 \usepackage[capitalise,noabbrev]{cleveref}
 
 \graphicspath{{figures/}}
@@ -576,7 +577,7 @@ falls inside the box in only 1--13\% of the images. DINOv2 shows 6--10 artifact 
 registers none, and the attention peak lies on the pole in 86--88\% of the images for DINOv2 with registers
 against 26--49\% for DINOv2.
 
-\begin{table}[t]
+\begin{table}[!htb]
 \centering
 \caption{Relevance inside the ground-truth pole box (chance level 9.1\%).}
 \label{tab:xai}
@@ -604,7 +605,7 @@ For 137 of the 143 images, five such boxes could be placed; the other six, with 
 from this metric as specified in advance. \Cref{tab:occlusion} shows the result, with means over seeds 0--2 and
 accuracy computed on these 143 images.
 
-\begin{table}[t]
+\begin{table}[!htb]
 \centering
 \caption{Occlusion test.}
 \label{tab:occlusion}
@@ -651,7 +652,7 @@ pre-specified rule, \cref{fig:xai} shows the maps of the most faithful method fo
 pre-specified random sample (seed-0 models; green: GT pole box). For all three models the relevance lies along the pole shaft, and it
 is more concentrated for DINOv2 with registers.
 
-\begin{table}[t]
+\begin{table}[!htb]
 \centering
 \caption{Comparison of attribution methods.}
 \label{tab:attribution}
@@ -668,7 +669,7 @@ CLS attention (last layer)                & 38--55\% & $+4.66$ [$+4.35, +4.97$] 
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[!htb]
   \centering
   \includegraphics[width=\linewidth]{xai_examples}
   \caption{Relevance maps of the most faithful attribution method for four randomly drawn test images.}

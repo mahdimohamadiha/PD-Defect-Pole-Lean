@@ -2,14 +2,16 @@
 
 Multi-task learning for **utility-pole lean assessment** (Leaned / Straight / Rejected) on the
 [PD-Defect](https://huggingface.co/datasets/EPDCL/pd-defect) dataset (`pole_lean_assessment` subset,
-CC BY 4.0). A ViT backbone is fine-tuned for 3-way classification, with an auxiliary head that
-regresses the pole axis (bottom and top keypoints).
+CC BY 4.0). A ViT (DINOv2) or CNN (ConvNeXt) backbone is fine-tuned for 3-way classification, with an
+auxiliary head that regresses the pole axis (bottom and top keypoints).
 
 > **Status:** all main experiments are complete (default runs, validation-only equal-budget tuning and the
 > final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers), as are the diagnostic analyses and
 > the pre-registered follow-ups: H1 (photometric augmentation) and H3 (data efficiency) are null; H2 (GT-angle soft
 > labels) improves calibration, but the H2b controls show that this comes from target smoothing, not from the
-> angle. The explainability test (X1) finds that both models attend to the pole, but keypoint supervision does not make attention more pole-focused. The perturbation test (X2) shows that all models depend causally on the pole and partly on its context. A paper
+> angle. The explainability test (X1) finds that both models attend to the pole, but keypoint supervision does not make attention more pole-focused. The perturbation test (X2) shows that all models depend causally on the pole and partly on its context. H4 repeats
+> the main comparison on a CNN (ConvNeXt-Base): again no effect of keypoint supervision, and ConvNeXt is weaker than
+> DINOv2. The exploratory H4b fixes the ConvNeXt keypoint head (position code) and still finds no gain. A paper
 > draft is in [`paper/`](paper).
 
 ## How this project was carried out
@@ -29,7 +31,8 @@ and test image are in [`results/`](results), so all reported numbers can be reco
 
 **The commit history is the pre-registration record.** Each follow-up hypothesis, its prediction, its outcomes and,
 where relevant, its decision rule were committed *before* the corresponding runs, and the results were committed
-afterwards. The single amendment made after a code check (artifact tokens in X1) is documented where it occurred.
+afterwards. The single amendment made after a code check (artifact tokens in X1) is documented where it occurred. H4b was
+designed after seeing the H4 test results; it was committed before its runs but is labelled exploratory.
 The history has not been rewritten, so the order of design and results can be verified from the commit
 timestamps. Commits made by the assistant carry its name as author or co-author.
 
@@ -44,7 +47,7 @@ descriptive section titles instead:
 | H3 | `b6_h3_dataeff_dinov2` | Training with less data |
 | H2, H2b | `b7_h2_soft_dinov2`, `b8_h2b_ctrl_dinov2` | Angle-aware soft targets |
 | X1, X2 | `xai_x1`, `x2_xai` | Where does the model look? |
-| H4 | `b9_tune_convnext`, `b10_final_convnext` | (to be added) |
+| H4, H4b | `b9_tune_convnext`, `b10_final_convnext`, `b11_convnext_kppos`, `x2_convnext` | A convolutional backbone |
 
 ## Headline: tuned models (final)
 
@@ -57,6 +60,9 @@ Hyper-parameters selected on validation only (batches 3 / 3b, equal budget per m
 | DINOv2-base | **`mt`** | 1e-5 / 3e-4 / 15 / 2 | **86.93 ± 2.17** | **84.72 ± 2.29** | **81.5** | 91.2 | **81.4** | **87.37** |
 | DINOv2-reg-base | `cls` | 2e-5 / 1e-3 / 15 / – (= default) | 83.99 ± 2.22 | 81.31 ± 2.64 | 77.9 | 89.1 | 76.9 | 81.47 |
 | DINOv2-reg-base | `mt` | 2e-5 / 3e-3 / 25 / 1 | 83.26 ± 0.88 | 79.97 ± 0.97 | 75.6 | 89.2 | 75.1 | 83.60 |
+| ConvNeXt-Base (22k) | `cls` | 1e-5 / 3e-3 / 25 / – | 82.82 ± 0.76 | 79.54 ± 0.77 | 77.0 | 88.5 | 73.1 | 80.70 |
+| ConvNeXt-Base (22k) | `mt` | 2e-5 / 3e-3 / 25 / 1 | 82.53 ± 0.67 | 78.97 ± 0.66 | 76.6 | 88.5 | 71.8 | 80.04 |
+| ConvNeXt-Base (22k) | `mt` + kp position code (H4b) | same as `mt` | 81.20 ± 1.67 | 77.53 ± 1.53 | 75.1 | 87.6 | 69.9 | 80.47 |
 | DINOv3 ViT-B/16 | dataset-card baseline\* | – | 84.14 | 81.74 | – | – | – | – |
 
 | comparison (B vs A) | Δ Macro-F1 | 95% CI | McNemar p (Holm) |
@@ -67,6 +73,9 @@ Hyper-parameters selected on validation only (batches 3 / 3b, equal budget per m
 | DINOv2-reg: re-run of the default `cls` config (b4b vs b2) | −1.06 | [−3.63, +1.61] | 0.33 (0.71) |
 | `cls`: DINOv2-reg vs DINOv2 (both tuned) | −2.19 | [−5.48, +1.09] | 0.25 (0.71) |
 | `mt`: DINOv2-reg vs DINOv2 (both tuned) | **−4.76** | [−7.98, −1.94] | 0.12 (0.47) |
+| ConvNeXt: tuned `mt` vs tuned `cls` (H4) | −0.57 | [−2.56, +1.25] | 1.0 (1.0) |
+| `cls`: ConvNeXt vs DINOv2 (both tuned) | −3.96 | [−8.26, +0.02] | 0.23 (0.46) |
+| `mt`: ConvNeXt vs DINOv2 (both tuned) | **−5.75** | [−10.55, −1.34] | 0.029 (0.09) |
 
 Takeaways:
 - **After equal-budget tuning, the auxiliary keypoint loss gives no significant change in classification**
@@ -499,6 +508,34 @@ not test keypoint supervision on a CNN properly.
   correlation is ≥ 0.9. (2) Δ Macro-F1 vs ConvNeXt `cls` and vs b10 `mt` (paired bootstrap, McNemar).
 - *Status:* exploratory, because it was designed after seeing b10 test results; it will be reported as such,
   whatever the outcome, and does not replace the pre-registered H4 result.
+
+**H4 result (b9 search, b10 final, X2 on ConvNeXt): the null result holds on a CNN.**
+- *Search (validation only):* `cls` selects lr 1e-5 / 3e-3 / 25 epochs (val F1 82.06 ± 0.44), `mt` selects
+  lr 2e-5 / 3e-3 / 25 epochs / λ = 1 (82.04 ± 1.73). All 16 configurations lie within 80.0–82.1.
+- *Primary:* ConvNeXt `mt` − `cls` = **−0.57** [−2.56, +1.25] Macro-F1, McNemar (majority vote) p = 1.0. As
+  predicted, the interval contains 0.
+- *ConvNeXt vs DINOv2:* `cls` −3.96 [−8.26, +0.02], McNemar Holm p = 0.46; `mt` −5.75 [−10.55, −1.34], Holm
+  p = 0.09. ConvNeXt is the weakest backbone; the `mt` gap is significant under the bootstrap only.
+- *Leaned vs Straight:* 88.3% (`cls`) and 88.1% (`mt`) on non-Rejected test images, against 89.6% / 90.4% for
+  DINOv2 and the 91.6% GT-angle ceiling. ConvNeXt also loses on `Rejected` (F1 72–73 vs 80–81).
+- *Keypoint head:* the ConvNeXt `mt` keypoint head did **not** learn the axis (angle correlation 0.13, MAE 3.28°,
+  vs 0.95 / 0.97° for DINOv2), so this `mt` model is not a real test of keypoint supervision on a CNN (see H4b).
+- *X2 on ConvNeXt* (`results/analysis/xai2_convnext`): blurring the pole flips 58% (`cls`) and 48% (`mt`) of
+  predictions vs 6% / 4% for random boxes. Pole reliance `mt` − `cls` +0.21 [+0.01, +0.40], Wilcoxon p = 0.75,
+  not significant (the mean and the median disagree). ConvNeXt vs DINOv2 reliance: not significant for either mode.
+  Keeping only the pole gives 8–11% accuracy, because ConvNeXt then predicts `Rejected` for about 90% of the
+  images (DINOv2: about 50%, accuracy 44–50%); the CNN reacts much more strongly to the blurred context.
+  Standard Grad-CAM *is* faithful on the CNN: 57% of its energy is in the pole box and its deletion gain over a
+  random order is +4.19 [+3.83, +4.56], against +0.29 for last-block Grad-CAM on the ViTs.
+
+**H4b result (b11, exploratory).** The position code largely repairs the keypoint head: angle correlation
+0.87 ± 0.08 over seeds (0.92 for seed 0), MAE 1.79° (median 1.05°). This is just below the pre-set 0.9
+criterion and below DINOv2 (0.95). Classification does not improve: Macro-F1 77.53 ± 1.53, i.e. −2.01
+[−4.65, +0.52] vs ConvNeXt `cls` and −1.44 [−3.38, +0.38] vs b10 `mt` (McNemar p = 1.0 for both). So on the CNN,
+too, a keypoint head that does learn the axis gives no classification gain. Output:
+[`b10_final_convnext/analysis.txt`](results/marimo/b10_final_convnext/analysis.txt),
+[`b11_convnext_kppos/analysis.txt`](results/marimo/b11_convnext_kppos/analysis.txt),
+[`analysis/phase1`](results/analysis/phase1).
 
 ## Data protocol
 

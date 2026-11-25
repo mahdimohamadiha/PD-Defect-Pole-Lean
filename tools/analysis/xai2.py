@@ -22,7 +22,7 @@ N_RAND = 5         # random control boxes per image
 STEPS = 10         # deletion steps
 MAX_FRAC = 0.5     # deletion up to 50% of the patches
 METHODS = ["att", "rollout", "chefer", "gradcam"]
-FIG_MODELS = ["dinov2_tuned_cls_s0", "dinov2_tuned_mt_s0", "dinov2reg_tuned_cls_s0", "dinov2reg_tuned_mt_s0",
+FIG_MODELS = ["convnext_tuned_cls_s0", "convnext_tuned_mt_s0", "dinov2_tuned_cls_s0", "dinov2_tuned_mt_s0", "dinov2reg_tuned_cls_s0", "dinov2reg_tuned_mt_s0",
               "dinov2_soft_cls_s0"]
 
 
@@ -65,8 +65,26 @@ def head(model, h):
     return model.cls_head(torch.cat([cls_t, patches.mean(1)], -1))
 
 
+def explain_conv(model, x):
+    """CNN backbone (H4): standard Grad-CAM on the last-stage feature map; attention-based methods do not apply."""
+    out = model.bb(pixel_values=x)
+    A = out.last_hidden_state; A.retain_grad()
+    patches = A.flatten(2).transpose(1, 2)
+    lg = model.cls_head(torch.cat([out.pooler_output, patches.mean(1)], -1))
+    lp = torch.log_softmax(lg.float(), -1)[0]
+    pred = int(lg.argmax(-1))
+    model.zero_grad(set_to_none=True)
+    lg[0, pred].backward()
+    with torch.no_grad():
+        w = A.grad[0].mean((1, 2))                                  # channel weights = spatially averaged gradients
+        cam = torch.relu((w[:, None, None] * A[0]).sum(0))
+    return pred, lp.detach().cpu().numpy(), {"gradcam": cam.float().cpu().numpy()}
+
+
 def explain(model, x):
     """one forward + backward: prediction, log-probs, and the four attribution maps (g x g, numpy)."""
+    if getattr(model, "conv", False):
+        return explain_conv(model, x)
     out = model.bb(pixel_values=x, output_hidden_states=True, output_attentions=True)
     atts = out.attentions
     for a in atts:
@@ -104,8 +122,7 @@ def batch_logp(model, arrs, dev, bs=32):
     for i in range(0, len(arrs), bs):
         x = torch.stack([to_x(a, dev) for a in arrs[i:i + bs]]).to(dev)
         with torch.autocast("cuda", dtype=torch.float16, enabled=dev == "cuda"):
-            h = model.bb(pixel_values=x).last_hidden_state
-            lg = head(model, h)
+            lg, _ = model(x)
         out.append(torch.log_softmax(lg.float(), -1).cpu().numpy())
     return np.concatenate(out)
 
@@ -144,6 +161,7 @@ def main():
     ap.add_argument("--train_script_dir", default=".")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--only", nargs="*", default=None, help="debug: restrict to these <tag>_s<seed>")
+    ap.add_argument("--convnext", action="store_true", help="H4: run on the ConvNeXt checkpoints (b10) instead of the X1 set")
     a = ap.parse_args()
     sys.path.insert(0, a.train_script_dir)
     from train_multitask import MTNet
@@ -165,7 +183,8 @@ def main():
                        occ=[paste(im_a, bl_a, rect)] + [paste(im_a, bl_a, r) for r in rb] + [ctx])
     print("images:", len(files), "| with 5 random boxes:", sum(len(v["rand"]) == N_RAND for v in prep.values()), flush=True)
     rows, maps = [], {}
-    for batch, tags in TAGS.items():
+    tagset = {"b10_final_convnext": ["convnext_tuned_cls", "convnext_tuned_mt"]} if a.convnext else TAGS
+    for batch, tags in tagset.items():
         for tag in tags:
             for seed in [0, 1, 2]:
                 name = f"{tag}_s{seed}"
@@ -179,15 +198,16 @@ def main():
                     d = prep[p]
                     x = to_x(d["im_a"], dev)[None].to(dev)
                     pred, lp0, mp = explain(model, x)
-                    g = mp["att"].shape[0]
+                    g = next(iter(mp.values())).shape[0]
                     bm = box_mask(d["box"], g)
                     rng = np.random.default_rng(1)
-                    orders = {m: np.argsort(-mp[m].ravel(), kind="stable") for m in METHODS}
+                    meths = [m for m in METHODS if m in mp]
+                    orders = {m: np.argsort(-mp[m].ravel(), kind="stable") for m in meths}
                     orders["random"] = rng.permutation(g * g)
-                    dels = [im for m in METHODS + ["random"] for im in deletion_set(d["im_a"], d["bl_a"], orders[m], T, g)]
+                    dels = [im for m in meths + ["random"] for im in deletion_set(d["im_a"], d["bl_a"], orders[m], T, g)]
                     LP = batch_logp(model, d["occ"] + dels, dev)
                     k = len(d["occ"]); nr = len(d["rand"])
-                    occ_lp = LP[:k]; del_lp = LP[k:].reshape(len(METHODS) + 1, STEPS, 3)
+                    occ_lp = LP[:k]; del_lp = LP[k:].reshape(len(meths) + 1, STEPS, 3)
                     r = {"tag": tag, "seed": seed, "file": os.path.basename(p), "y": d["y"], "pred": pred,
                          "lp0": float(lp0[pred]), "n_rand": nr,
                          "drop_pole": float(lp0[pred] - occ_lp[0, pred]),
@@ -195,25 +215,25 @@ def main():
                          "flip_pole": int(occ_lp[0].argmax() != pred),
                          "flip_rand": float(np.mean(occ_lp[1:1 + nr].argmax(1) != pred)) if nr else None,
                          "ctx_pred": int(occ_lp[-1].argmax()), "box_area": float(bm.mean())}
-                    for j, m in enumerate(METHODS + ["random"]):
+                    for j, m in enumerate(meths + ["random"]):
                         r[f"aoc_{m}"] = float(np.mean(lp0[pred] - del_lp[j, :, pred]))
-                    for m in METHODS:
+                    for m in meths:
                         r[f"in_box_{m}"] = metrics(mp[m], bm)[0]
                         r[f"hit_{m}"] = metrics(mp[m], bm)[1]
                     rows.append(r)
                     if name in FIG_MODELS:
-                        maps.setdefault(name, {})[os.path.basename(p)] = {m: (mp[m] / (mp[m].max() + 1e-12)).astype(np.float16) for m in METHODS}
+                        maps.setdefault(name, {})[os.path.basename(p)] = {m: (mp[m] / (mp[m].max() + 1e-12)).astype(np.float16) for m in meths}
                 rr = [x for x in rows if x["tag"] == tag and x["seed"] == seed and x["n_rand"] == N_RAND]
                 print(f"{name}: pole reliance {np.mean([x['drop_pole'] - x['drop_rand'] for x in rr]):+.3f} | "
-                      + " ".join(f"aoc_{m} {np.mean([x['aoc_' + m] for x in rr]):.3f}" for m in METHODS + ["random"])
-                      + " | " + " ".join(f"box_{m} {np.nanmean([x['in_box_' + m] for x in rr]):.3f}" for m in METHODS), flush=True)
+                      + " ".join(f"aoc_{m} {np.mean([x['aoc_' + m] for x in rr]):.3f}" for m in meths + ["random"])
+                      + " | " + " ".join(f"box_{m} {np.nanmean([x['in_box_' + m] for x in rr]):.3f}" for m in meths), flush=True)
                 del model; torch.cuda.empty_cache()
     json.dump(rows, open(os.path.join(a.out, "xai2_rows.json"), "w"))
     np.savez_compressed(os.path.join(a.out, "xai2_maps.npz"),
-                        **{f"{k}|{f}|{m}": v[m] for k, d in maps.items() for f, v in d.items() for m in METHODS})
+                        **{f"{k}|{f}|{m}": v[m] for k, d in maps.items() for f, v in d.items() for m in v})
     # ---- sanity check (Adebayo et al., 2018)
     ck = os.path.join(a.ckpt_root, "b4a_final_dinov2", "dinov2_tuned_cls_s0.pt")
-    if os.path.exists(ck) and not a.only:
+    if os.path.exists(ck) and not a.only and not a.convnext:
         model, ar = load(ck, MTNet, dev)
         rand_model = copy.deepcopy(model)
         torch.manual_seed(0)

@@ -167,8 +167,12 @@ class MTNet(nn.Module):
         super().__init__()
         from transformers import AutoModel
         self.bb = AutoModel.from_pretrained(name)
-        d = self.bb.config.hidden_size
-        self.patch = self.bb.config.patch_size
+        cfg = self.bb.config
+        self.conv = getattr(cfg, "model_type", "") in ("convnext", "convnextv2")   # CNN backbone (H4)
+        if self.conv:   # last stage: stride 32, hidden_sizes[-1] channels; its feature-map cells act as "patch tokens"
+            d, self.patch = cfg.hidden_sizes[-1], 32
+        else:
+            d, self.patch = cfg.hidden_size, cfg.patch_size
         self.n_patch = (size // self.patch) ** 2
         self.mode = mode
         self.q = nn.Parameter(torch.randn(2, d) * 0.02)           # bottom / top queries
@@ -187,8 +191,13 @@ class MTNet(nn.Module):
         return torch.stack([s, s.abs(), dy / L, L], -1)
 
     def forward(self, x):
-        h = self.bb(pixel_values=x).last_hidden_state
-        cls_t, patches = h[:, 0], h[:, -self.n_patch:]            # skips register tokens if any
+        if self.conv:   # [B, C, H, W] feature map -> tokens; the pooled (LayerNorm-ed) feature plays the CLS role
+            out = self.bb(pixel_values=x)
+            patches = out.last_hidden_state.flatten(2).transpose(1, 2)
+            cls_t = out.pooler_output
+        else:
+            h = self.bb(pixel_values=x).last_hidden_state
+            cls_t, patches = h[:, 0], h[:, -self.n_patch:]        # skips register tokens if any
         kq, _ = self.attn(self.q.unsqueeze(0).expand(x.size(0), -1, -1), patches, patches)
         kp = torch.sigmoid(self.kp_head(kq)).flatten(1)           # [B,4] = xb,yb,xt,yt in [0,1]
         feat = [cls_t, patches.mean(1)]

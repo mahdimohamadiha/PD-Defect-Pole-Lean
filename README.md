@@ -44,6 +44,7 @@ descriptive section titles instead:
 | H3 | `b6_h3_dataeff_dinov2` | Training with less data |
 | H2, H2b | `b7_h2_soft_dinov2`, `b8_h2b_ctrl_dinov2` | Angle-aware soft targets |
 | X1, X2 | `xai_x1`, `x2_xai` | Where does the model look? |
+| H4 | `b9_tune_convnext`, `b10_final_convnext` | (to be added) |
 
 ## Headline: tuned models (final)
 
@@ -461,6 +462,26 @@ faithfulness is measured instead of assumed. Script: [`tools/analysis/xai2.py`](
     high = insensitive), attention (0.03) and Grad-CAM (0.08) pass, Chefer is partly insensitive (0.70), and
     rollout fails (0.96). CLS attention is thus both faithful and model-sensitive. Following the figure rule, the
     figure uses Chefer.
+
+**H4: does the result hold for a CNN backbone? (batches `b9_tune_convnext`, `b10_final_convnext`).** Pre-specified
+before any ConvNeXt run. Both backbones studied so far are DINOv2 vision transformers, so the main comparison is
+repeated on a convolutional network of similar size.
+- *Backbone:* ConvNeXt-Base pretrained on ImageNet-22k (`facebook/convnext-base-224-22k`, 88 M parameters), fully
+  fine-tuned at 448 px. The 14×14 cells of the last stage (1024 channels) replace the patch tokens, and its pooled,
+  LayerNorm-ed feature replaces the CLS token. The heads, losses, data protocol and augmentation are unchanged.
+- *Protocol:* the same equal-budget search as for both ViTs (the same 8 configurations, λ draws and search seeds
+  100/101; validation only), then the selected configuration per mode is trained with seeds 0–2 and tested once.
+  The search space was designed for ViTs and is reused unchanged for comparability; this may not be optimal for a
+  CNN, and it affects `cls` and `mt` equally.
+- *Primary outcome:* Δ Macro-F1 (`mt` − `cls`) on test, with paired bootstrap and McNemar.
+- *Expectation:* based on both ViTs, no significant difference (CI contains 0). A significant difference in
+  either direction would be reported as a backbone-dependent effect.
+- *Secondary outcomes:*
+  - ConvNeXt vs DINOv2 for each mode;
+  - Leaned-vs-Straight accuracy relative to the 91.6% label-consistency ceiling;
+  - the X2 occlusion test (pole reliance, flip rates, accuracy with only the pole) on the ConvNeXt checkpoints,
+    with standard Grad-CAM on the last stage and its deletion faithfulness. Attention-based methods do not apply
+    to a CNN.
 
 ## Data protocol
 

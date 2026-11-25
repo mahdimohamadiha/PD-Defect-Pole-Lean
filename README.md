@@ -9,8 +9,41 @@ regresses the pole axis (bottom and top keypoints).
 > final tuned test evaluation, for both DINOv2-base and DINOv2-with-registers), as are the diagnostic analyses and
 > the pre-registered follow-ups: H1 (photometric augmentation) and H3 (data efficiency) are null; H2 (GT-angle soft
 > labels) improves calibration, but the H2b controls show that this comes from target smoothing, not from the
-> angle. The explainability test (X1) finds that both models attend to the pole, but keypoint supervision does not make attention more pole-focused. The perturbation test (X2) shows that all models depend causally on the pole and partly on its context. Next:
-> the paper.
+> angle. The explainability test (X1) finds that both models attend to the pole, but keypoint supervision does not make attention more pole-focused. The perturbation test (X2) shows that all models depend causally on the pole and partly on its context. A paper
+> draft is in [`paper/`](paper).
+
+## How this project was carried out
+
+**AI assistance.** The study was carried out with Claude, an AI assistant developed by Anthropic, working as a
+research assistant under the authors' direction. Claude searched the literature, wrote and ran the experiment and
+analysis code, proposed experimental designs, performed the statistical analyses, produced the figures and drafted
+the manuscript. The authors chose the topic and the dataset, reviewed every design and approved it before it was
+run, made the key decisions (for example the target venue, the follow-up hypotheses to pursue, the deeper
+explainability analysis and the structure of the paper), and checked the results and the text. The paper states
+this in its "Use of AI assistance" section. No other AI tool was used.
+
+**Timeline and compute.** All experiments ran between 23 and 25 November 2026 on single-GPU cloud notebooks.
+One training run takes about 4–7 minutes, and runs were queued back to back, so the whole study needed a few
+tens of GPU hours. For every run, the training log, the selected epoch and the prediction for every validation
+and test image are in [`results/`](results), so all reported numbers can be recomputed.
+
+**The commit history is the pre-registration record.** Each follow-up hypothesis, its prediction, its outcomes and,
+where relevant, its decision rule were committed *before* the corresponding runs, and the results were committed
+afterwards. The single amendment made after a code check (artifact tokens in X1) is documented where it occurred.
+The history has not been rewritten, so the order of design and results can be verified from the commit
+timestamps. Commits made by the assistant carry its name as author or co-author.
+
+**Labels used here vs. the paper.** The hypothesis labels in this README are internal; the paper uses
+descriptive section titles instead:
+
+| README label | batch | paper section |
+|---|---|---|
+| main comparison | `b1`–`b4b` | Main comparison: does keypoint supervision help? |
+| phase 1 / 1b | (analysis only) | What do the labels encode? · Where do the errors come from? |
+| H1 | `b5_h1_photo_dinov2` | Photometric augmentation |
+| H3 | `b6_h3_dataeff_dinov2` | Training with less data |
+| H2, H2b | `b7_h2_soft_dinov2`, `b8_h2b_ctrl_dinov2` | Angle-aware soft targets |
+| X1, X2 | `xai_x1`, `x2_xai` | Where does the model look? |
 
 ## Headline: tuned models (final)
 

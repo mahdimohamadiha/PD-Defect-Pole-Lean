@@ -23,6 +23,10 @@
    classifier          : Macro-F1 78.97 +- 0.66, Leaned-vs-Straight acc on non-Rejected 88.07
    rule angle > 10 deg                        : hybrid Macro-F1 49.40 +- 0.79, L-vs-S acc 67.37
    rule angle > t_val (t_val = 1.00 +- 0.39)  : hybrid Macro-F1 53.62 +- 3.75, L-vs-S acc 68.07
+ convnext_kppos_mt: angle MAE 1.79 deg (median 1.05), corr(pred, GT) 0.873, n=143
+   classifier          : Macro-F1 77.53 +- 1.53, Leaned-vs-Straight acc on non-Rejected 87.37
+   rule angle > 10 deg                        : hybrid Macro-F1 58.95 +- 1.98, L-vs-S acc 72.63
+   rule angle > t_val (t_val = 4.53 +- 1.77)  : hybrid Macro-F1 66.21 +- 4.15, L-vs-S acc 75.96
  dinov2reg_mt: angle MAE 1.22 deg (median 0.69), corr(pred, GT) 0.927, n=143
    classifier          : Macro-F1 78.66 +- 0.99, Leaned-vs-Straight acc on non-Rejected 85.79
    rule angle > 10 deg                        : hybrid Macro-F1 66.18 +- 1.08, L-vs-S acc 76.32
@@ -37,6 +41,7 @@
  dinov2reg_tuned_mt  :      7.5% |     25.9% |     33.3% |      0.0% |      9.5% |      0.0%
  convnext_tuned_cls  :      7.1% |     25.9% |     33.3% |      0.0% |      0.0% |      0.0%
  convnext_tuned_mt   :      7.5% |     29.6% |     30.0% |      7.4% |      0.0% |      0.0%
+ convnext_kppos_mt   :      9.1% |     23.5% |     33.3% |     14.8% |      4.8% |      5.6%
  cls                 :      8.7% |     30.9% |     26.7% |      0.0% |     14.3% |      0.0%
  mt                  :      7.1% |     22.2% |     20.0% |      0.0% |      9.5% |      0.0%
  dinov2reg_cls       :      9.5% |     22.2% |     13.3% |      0.0% |      4.8% |      0.0%
@@ -50,3 +55,4 @@
  dinov2reg_tuned_mt  :  141   36    9 |   25  346   13 |   21   10   80   recall L/S/R: 75.8/90.1/72.1
  convnext_tuned_cls  :  148   30    8 |   29  337   18 |   21   11   79   recall L/S/R: 79.6/87.8/71.2
  convnext_tuned_mt   :  144   31   11 |   26  339   19 |   20   12   79   recall L/S/R: 77.4/88.3/71.2
+ convnext_kppos_mt   :  139   33   14 |   25  333   26 |   20   10   81   recall L/S/R: 74.7/86.7/73.0

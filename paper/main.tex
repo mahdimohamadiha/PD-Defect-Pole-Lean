@@ -48,7 +48,7 @@ correction). Every follow-up hypothesis was specified in a public, time-stamped 
 First, we show that the dataset's keypoint split contains 125 of the 227 classification-test images, so
 combining the two tasks naively leaks test data; we give a leakage-free protocol. Second, ground-truth axis
 angles reveal that the binary lean label follows an implicit threshold of about $3^\circ$ (a single
-threshold reproduces 91.6\% of the test labels), not the $10^\circ$ rule used in earlier work, and that
+threshold reproduces 91.6\% of the test labels), not the $10^\circ$ rule used by the dataset authors, and that
 residual errors concentrate in the ambiguous 2--$6^\circ$ band. Third, after tuning, an auxiliary keypoint
 loss does not change classification quality on either backbone ($+1.2$ and $-1.3$ Macro-F1 points, both
 confidence intervals containing zero), nor with 10--50\% of the training data, nor with stronger photometric
@@ -72,7 +72,8 @@ Leaning utility poles are a common defect in power distribution networks. A pole
 conductors closer to the ground, strain its stays and fittings, and eventually fail. Utilities therefore
 inspect poles regularly, and much of this work is now supported by images taken by field staff with
 smartphones or by drones. Automating the first screening step, deciding from an image whether a pole is
-leaning, could reduce the inspection workload considerably
+leaning, could reduce the inspection workload, and recent systems address this and related tasks from
+smartphone, UAV and other monocular images
 \citep{masabathula2026smartphone,luo2026pole,wang2024leaning}.
 
 Lean is a geometric property. It is natural to expect that a model which is taught where the pole axis is
@@ -80,8 +81,8 @@ should also be better at deciding whether the pole leans. The recently released 
 \citep{pddefect_data} makes this question testable: its \texttt{pole\_lean\_assessment} subset provides
 image-level lean labels (Leaned / Straight / Rejected) and, separately, two keypoints per pole that mark the
 bottom and the top of its axis. The dataset authors use the keypoints in a separate pose model whose predicted
-angle is thresholded at $10^\circ$ \citep{masabathula2026smartphone}, while the image-level baseline on the
-dataset card is a fine-tuned DINOv3 classifier \citep{simeoni2025dinov3}.
+angle is thresholded at $10^\circ$ in a supplementary rule \citep{masabathula2026smartphone}, while the
+image-level baseline on the dataset card is a DINOv3 ViT-B/16 classifier \citep{simeoni2025dinov3}.
 
 In this paper we ask whether the keypoints help the \emph{classifier}. We train a single vision transformer
 with a classification head and an auxiliary keypoint head (multi-task learning, \citealp{caruana1997multitask})
@@ -114,18 +115,27 @@ and that better pole-focused attention does not go with higher accuracy (\cref{s
 \section{Related work}
 \label{sec:related}
 
-Pole inclination has been estimated from UAV images with detectors followed by line fitting
-\citep{luo2026pole}, from street-level imagery with a transformer detector and a segmentation head
-\citep{dickinson2025pole}, and from monocular images with training-free geometric reasoning
+Pole inclination has been estimated from UAV images with a detector or segmentation network followed by
+geometric angle estimation, such as Hough-transform line detection or PCA-based line fitting \citep{alam2020resilience,luo2026pole}, from
+street-level imagery with a detection transformer and a segmentation head whose masks are used for line fitting
+\citep{dickinson2025pole}, from a segmented image combined with a 3D point cloud \citep{chen2023inclination},
+and from monocular images with training-free geometric reasoning
 \citep{wang2024leaning,wang2026overheadwires}. The PD-Defect authors deploy a smartphone-based pipeline in
-which an object detector classifies pole instances and a separate pose model predicts the axis keypoints,
-whose angle is compared with a $10^\circ$ threshold \citep{masabathula2026smartphone}. In all these systems,
-geometry and classification are handled by separate components. We instead study joint training of one
-network, and measure what the geometric supervision does to the classifier. \todo{Summarise Wang \& Wei
-(EAAI 2026) after reading the full text.}
+which a YOLO12m detector labels poles as leaned or straight and a separate YOLO12m pose model predicts the axis
+keypoints, whose angle is compared with a $10^\circ$ threshold in a supplementary rule
+\citep{masabathula2026smartphone}. In these systems, the pole angle comes from a separate geometric or
+pose-estimation step, not from a network trained jointly with the lean classifier. We instead study joint
+training of one network, and measure what the geometric supervision does to the classifier.
+\citet{wang2026overheadwires} extend their earlier method to poles together with overhead wires: from a single
+uncalibrated image they extract line segments and vanishing points, group pairs of segments by position and
+orientation into candidate pole faces and wires, and reconstruct both, with their tilt angles, in a relative
+3D scene without any training. They compare the estimated poles with ground-truth annotations on leaning-pole
+datasets, using deep segmentation networks as baselines, and do not address image-level lean classification;
+their model is hand-designed geometry, whereas ours is trained jointly for classification and keypoints and
+evaluated in controlled, pre-specified experiments.
 
 Auxiliary tasks can act as an inductive bias and a regulariser \citep{caruana1997multitask,ruder2017overview};
-keypoint regression from deep features is standard in pose estimation \citep{toshev2014deeppose}, and our
+keypoints can be regressed directly from deep features \citep{toshev2014deeppose}, and our
 keypoint head uses learned queries that cross-attend to patch tokens, in the spirit of
 DETR \citep{carion2020detr}. Whether such auxiliary supervision helps the main task is known to depend on the
 task pair and on tuning, which is why we tune both variants with the same budget.
@@ -138,7 +148,8 @@ explainability analysis.
 Label smoothing \citep{szegedy2016inception} improves calibration and changes the geometry of the learned
 representation \citep{muller2019labelsmoothing}; modern networks are often over-confident
 \citep{guo2017calibration}. Soft labels derived from human disagreement can improve robustness
-\citep{peterson2019human}, and label errors are common in public datasets \citep{northcutt2021confident}.
+\citep{peterson2019human}, and label errors can be found even in widely used benchmark datasets
+\citep{northcutt2021confident}.
 Our angle-aware targets are a measurement-based form of soft labelling, and we compare them with plain
 smoothing of the same mass.
 
@@ -150,9 +161,9 @@ test and a sanity check, in addition to the energy inside a ground-truth box and
 \citep{zhang2018excitation}.
 
 Finally, leakage between training and test data is a frequent source of over-optimistic results
-\citep{kapoor2023leakage}. Seed and data-order variance can be as large as the effects being reported
-\citep{bouthillier2021variance}, and comparisons of classifiers on one test set need paired tests
-\citep{dietterich1998tests}. Pre-registration of hypotheses is established in other sciences as a guard
+\citep{kapoor2023leakage}. Variance from data sampling, data order and initialisation is of the same order as many reported
+improvements \citep{bouthillier2021variance}, and McNemar's test is an acceptable paired test for classifiers
+trained once and compared on one test set \citep{dietterich1998tests}. Pre-registration of hypotheses is advocated in other sciences as a guard
 against analytical flexibility \citep{nosek2018preregistration}; we adopt a lightweight version of it.
 
 % =====================================================================================================
@@ -162,9 +173,10 @@ against analytical flexibility \citep{nosek2018preregistration}; we adopt a ligh
 \subsection{Dataset}
 We use the \texttt{pole\_lean\_assessment} subset of PD-Defect \citep{pddefect_data} (CC BY 4.0), which was
 captured with smartphones in Eastern Andhra Pradesh, India. Its classification part has an official split of
-1706 / 341 / 227 images (train / validation / test) over three classes: Leaned (619 images), Straight (1281)
-and Rejected (374). Rejected marks images that the annotators considered unusable for lean assessment, for
-example because of extreme perspective, occlusion or poor visibility. A separate keypoint part
+1706 / 341 / 227 images (train / validation / test) over three classes; counted from the released files, these
+are Leaned (619 images), Straight (1281) and Rejected (374). The dataset does not define Rejected; on
+inspection, it contains images that are unsuitable for lean assessment, for example because of strong
+perspective, several poles or poor visibility. A separate keypoint part
 (1438 / 181 / 179 images) annotates, for each pole, a bounding box and two keypoints at the bottom and top of
 the pole axis. Only the official classification split is used for training, model selection and testing.
 

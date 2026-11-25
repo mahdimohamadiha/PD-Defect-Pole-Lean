@@ -44,7 +44,7 @@ We study whether such geometric supervision improves image-level lean classifica
 Rejected) on the public PD-Defect dataset, using fully fine-tuned DINOv2 vision transformers. All comparisons
 use equal-budget hyper-parameter tuning on validation data, several training seeds, a single evaluation on
 the official test split, and paired statistics (bootstrap confidence intervals, McNemar tests with Holm
-correction). Every follow-up hypothesis was specified in a public, time-stamped repository before it was run.
+correction). Every follow-up hypothesis was specified in a time-stamped version-controlled repository before it was run.
 First, we show that the dataset's keypoint split contains 125 of the 227 classification-test images, so
 combining the two tasks naively leaks test data; we give a leakage-free protocol. Second, ground-truth axis
 angles reveal that the binary lean label follows an implicit threshold of about $3^\circ$ (a single
@@ -58,7 +58,7 @@ smoothing rather than from geometry. Finally, saliency and occlusion analyses sh
 (blurring it flips about half of the predictions) and also on its surroundings; keypoint supervision increases
 this reliance only for DINOv2 with registers, and the backbone whose attention is most pole-focused is the less
 accurate one. The joint model still predicts the pole axis (mean angle error $0.97^\circ$) at no
-cost in accuracy. Code and all per-image predictions are released.
+cost in accuracy.
 \end{abstract}
 
 \noindent\textbf{Keywords:} power distribution inspection; utility pole; multi-task learning; vision transformer;
@@ -92,7 +92,7 @@ images) and fine-tuning large transformers is noisy, a naive comparison can easi
 hyper-parameter search budget on validation data, every configuration is trained with several seeds, the test
 split is evaluated once, and differences are reported with paired bootstrap confidence intervals and exact
 McNemar tests with Holm correction. Each follow-up hypothesis, with its prediction and decision rule, was
-written to a public, time-stamped repository before the corresponding runs, and every outcome is reported.
+written to a time-stamped version-controlled repository before the corresponding runs, and every outcome is reported.
 
 Beyond the main comparison, we look at what limits accuracy on this dataset, whether the keypoint geometry
 helps in other ways (with less training data, with stronger augmentation, or as angle-aware training
@@ -334,7 +334,7 @@ negative log-likelihood (NLL) and the expected calibration error (ECE, 15 equal-
 \citealp{guo2017calibration}).
 
 \subsection{Pre-specification}
-After the main experiments (\cref{sec:main}), each follow-up hypothesis was written to the public repository
+After the main experiments (\cref{sec:main}), each follow-up hypothesis was written to the project repository
 before its runs, together with its intervention, primary and secondary outcomes, predicted direction, and,
 where relevant, a decision rule. This applies to the experiments on photometric augmentation, reduced training
 data, soft targets (including their replication and controls) and explainability. The time-stamped commit
@@ -719,7 +719,7 @@ its weights are gated. The follow-up experiments reuse hyper-parameters tuned fo
 disadvantage the interventions; we accepted this to keep the number of test evaluations small. The
 saliency measures are correlational, and the occlusion test replaces regions by a blurred version, which also
 moves the images away from the training distribution. Finally,
-pre-specification was done in a public repository rather than in a formal registry, and the main comparison
+pre-specification was done in the project's version-controlled repository rather than in a formal registry, and the main comparison
 was not pre-specified.
 
 % =====================================================================================================
@@ -732,13 +732,14 @@ on its surroundings, and keypoint supervision increases the reliance on the pole
 without an accuracy gain. The binding constraint is the label, which follows an implicit
 $3^\circ$ threshold with an ambiguous band around it. Softened targets improve calibration, but plain
 smoothing does the same. We also identified a cross-task leakage in the dataset that affects more than half
-of the classification test set for any method that uses the keypoint split, and we provide a leakage-free
-protocol, code and per-image predictions to support further work.
+of the classification test set for any method that uses the keypoint split, and we describe a leakage-free
+protocol for multi-task use of the dataset.
 
 % =====================================================================================================
 \section*{Data and code availability}
 PD-Defect is available under CC BY 4.0 \citep{pddefect_data}. Code, analysis scripts, all per-run and
-per-image results and the pre-specification history are available at \todo{repository URL}.
+per-image results and the pre-specification history are available from the corresponding author on reasonable
+request.
 
 \section*{Acknowledgements}
 We thank the creators of PD-Defect for releasing the dataset under an open licence. This research received no specific grant from any funding agency in the public,

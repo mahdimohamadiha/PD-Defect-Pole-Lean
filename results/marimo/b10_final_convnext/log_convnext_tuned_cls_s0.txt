@@ -1,0 +1,53 @@
+{'train': 1706, 'val': 341, 'test': 227} train imgs with kp: 1149 | size mismatches dropped: 87
+Loading weights:   0%|          | 0/342 [00:00<?, ?it/s]Loading weights: 100%|██████████| 342/342 [00:00<00:00, 16498.38it/s]
+[transformers] [1mConvNextModel LOAD REPORT[0m from: facebook/convnext-base-224-22k
+Key               | Status     |  | 
+------------------+------------+--+-
+classifier.weight | UNEXPECTED |  | 
+classifier.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+/marimo/train_multitask.py:248: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=dev == "cuda")
+/marimo/train_multitask.py:267: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scaler.step(opt); scaler.update(); sched.step()
+seed0 ep0 val acc 0.6246 macroF1 0.5342
+seed0 ep1 val acc 0.6804 macroF1 0.6587
+seed0 ep2 val acc 0.7537 macroF1 0.7270
+seed0 ep3 val acc 0.8182 macroF1 0.7875
+seed0 ep4 val acc 0.7331 macroF1 0.7155
+seed0 ep5 val acc 0.8211 macroF1 0.7919
+seed0 ep6 val acc 0.8240 macroF1 0.7708
+seed0 ep7 val acc 0.8358 macroF1 0.7930
+seed0 ep8 val acc 0.8328 macroF1 0.7925
+seed0 ep9 val acc 0.8299 macroF1 0.8002
+seed0 ep10 val acc 0.8328 macroF1 0.7914
+seed0 ep11 val acc 0.8358 macroF1 0.7964
+seed0 ep12 val acc 0.8358 macroF1 0.7922
+seed0 ep13 val acc 0.8358 macroF1 0.7986
+seed0 ep14 val acc 0.8387 macroF1 0.8029
+seed0 ep15 val acc 0.8416 macroF1 0.8054
+seed0 ep16 val acc 0.8416 macroF1 0.8104
+seed0 ep17 val acc 0.8387 macroF1 0.8041
+seed0 ep18 val acc 0.8416 macroF1 0.8072
+seed0 ep19 val acc 0.8416 macroF1 0.8072
+seed0 ep20 val acc 0.8416 macroF1 0.8101
+seed0 ep21 val acc 0.8446 macroF1 0.8129
+seed0 ep22 val acc 0.8416 macroF1 0.8104
+seed0 ep23 val acc 0.8416 macroF1 0.8104
+seed0 ep24 val acc 0.8446 macroF1 0.8129
+              precision    recall  f1-score   support
+
+      Leaned     0.7692    0.8065    0.7874        62
+    Straight     0.8906    0.8906    0.8906       128
+    Rejected     0.7353    0.6757    0.7042        37
+
+    accuracy                         0.8326       227
+   macro avg     0.7984    0.7909    0.7941       227
+weighted avg     0.8322    0.8326    0.8320       227
+
+{'seed': 0, 'mode': 'cls', 'tag': 'convnext_tuned_cls', 'backbone': 'facebook/convnext-base-224-22k', 'best_epoch': 21, 'val_macroF1': 0.8128891767586929, 'val_acc': 0.844574780058651, 'test_acc': 0.8325991189427313, 'test_macroF1': 0.7940839756386086, 'checkpoint': 'convnext_tuned_cls_s0.pt'}
+val_macroF1 0.8129 +- 0.0000
+test_acc 0.8326 +- 0.0000
+test_macroF1 0.7941 +- 0.0000

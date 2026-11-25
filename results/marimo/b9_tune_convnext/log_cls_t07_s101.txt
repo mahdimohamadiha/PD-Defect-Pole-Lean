@@ -22,3 +22,10 @@ seed101 ep6 val acc 0.8299 macroF1 0.7908
 seed101 ep7 val acc 0.8211 macroF1 0.7839
 seed101 ep8 val acc 0.8270 macroF1 0.7831
 seed101 ep9 val acc 0.8240 macroF1 0.7783
+seed101 ep10 val acc 0.8270 macroF1 0.7806
+seed101 ep11 val acc 0.8211 macroF1 0.7750
+seed101 ep12 val acc 0.8211 macroF1 0.7750
+seed101 ep13 val acc 0.8240 macroF1 0.7778
+seed101 ep14 val acc 0.8240 macroF1 0.7778
+{'seed': 101, 'mode': 'cls', 'tag': 'cls_t07', 'backbone': 'facebook/convnext-base-224-22k', 'best_epoch': 3, 'val_macroF1': 0.7926469355697767, 'val_acc': 0.8357771260997068}
+val_macroF1 0.7926 +- 0.0000

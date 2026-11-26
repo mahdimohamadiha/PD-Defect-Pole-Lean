@@ -99,12 +99,16 @@ def fig_error_by_angle():
 
 
 def fig_forest():
-    b4a, b4b, b5, b6, b8 = (f"{R}/{b}/analysis.json" for b in
-                            ["b4a_final_dinov2", "b4b_final_dinov2reg", "b5_h1_photo_dinov2", "b6_h3_dataeff_dinov2", "b8_h2b_ctrl_dinov2"])
+    b4a, b4b, b5, b6, b8, b10, b11 = (f"{R}/{b}/analysis.json" for b in
+                                      ["b4a_final_dinov2", "b4b_final_dinov2reg", "b5_h1_photo_dinov2",
+                                       "b6_h3_dataeff_dinov2", "b8_h2b_ctrl_dinov2",
+                                       "b10_final_convnext", "b11_convnext_kppos"])
     s345 = "results/analysis/h2b/seeds345.json"
     groups = [
         [("mt − cls, DINOv2", pair(b4a, "dinov2_tuned_cls", "dinov2_tuned_mt")),
-         ("mt − cls, DINOv2-reg", pair(b4b, "dinov2reg_tuned_cls", "dinov2reg_tuned_mt"))],
+         ("mt − cls, DINOv2-reg", pair(b4b, "dinov2reg_tuned_cls", "dinov2reg_tuned_mt")),
+         ("mt − cls, ConvNeXt-B", pair(b10, "convnext_tuned_cls", "convnext_tuned_mt")),
+         ("mt (+pos) − cls, ConvNeXt-B", pair(b11, "convnext_tuned_cls", "convnext_kppos_mt"))],
         [("Photo aug., cls", pair(b5, "dinov2_tuned_cls", "dinov2_photo_cls")),
          ("Photo aug., mt", pair(b5, "dinov2_tuned_mt", "dinov2_photo_mt"))],
         [("mt − cls, 10% data", pair(b6, "dinov2_f10_cls", "dinov2_f10_mt")),
@@ -115,7 +119,7 @@ def fig_forest():
          ("Soft − shuffled", pair(b8, "dinov2_softshuf_cls", "dinov2_soft_cls")),
          ("Soft − uniform", pair(b8, "dinov2_softunif_cls", "dinov2_soft_cls"))]]
     n = sum(len(g) for g in groups) + len(groups) - 1
-    fig, ax = plt.subplots(figsize=(COL1, 3.0))
+    fig, ax = plt.subplots(figsize=(COL1, 3.45))
     y, yt, yl = n, [], []
     for gi, g in enumerate(groups):
         top = y
@@ -129,7 +133,7 @@ def fig_forest():
         y -= 1
     ax.axvline(0, color=INK, lw=0.7, zorder=2)
     ax.set_yticks(yt, yl); ax.tick_params(axis="y", length=0)
-    ax.set_xlim(-5, 7); ax.set_xticks([-4, -2, 0, 2, 4, 6]); ax.set_ylim(-0.6, n - 0.4)
+    ax.set_xlim(-5.2, 7.0); ax.set_xticks([-4, -2, 0, 2, 4, 6]); ax.set_ylim(-0.6, n - 0.4)
     ax.set_xlabel("Δ Macro-F1 (points)")
     ax.grid(axis="y", visible=False); ax.grid(axis="x", visible=True)
     ax.spines["left"].set_visible(False)
@@ -218,31 +222,39 @@ def fig_xai(root):
 
 
 def fig_xai2(root):
-    """pre-registered X2 figure: most faithful method (Chefer), same 4 random images as X1, three models."""
+    """pre-registered X2 figure: most faithful method per architecture (Chefer for ViT, Grad-CAM for ConvNeXt-B), same 4 random images as X1."""
     z = np.load(f"{R}/x2_xai/xai2_maps.npz")
+    zc = np.load(f"{R}/x2_convnext/xai2_maps.npz")
     rows = json.load(open(f"{R}/xai_x1/xai_rows.json"))
     boxes = {os.path.basename(p): (p, v) for p, v in gt_boxes(root).items()}
     files = sorted({r["file"] for r in rows if r["tag"] == "dinov2_tuned_cls" and r["seed"] == 0})
     sel = [files[i] for i in np.random.default_rng(0).choice(len(files), 8, replace=False)][:4]
-    T = 400; models = ["dinov2_tuned_cls_s0", "dinov2_tuned_mt_s0", "dinov2reg_tuned_cls_s0"]
-    titles = ["Image", "DINOv2 cls", "DINOv2 mt", "DINOv2-reg cls"]
-    fig, axs = plt.subplots(len(sel), 4, figsize=(COL2 * 0.8, COL2 * 0.8 * len(sel) / 4 * 1.02))
+    T = 400
+    cols = [
+        ("Image", None, None, None),
+        ("DINOv2 cls", z, "dinov2_tuned_cls_s0", "chefer"),
+        ("DINOv2 mt", z, "dinov2_tuned_mt_s0", "chefer"),
+        ("DINOv2-reg cls", z, "dinov2reg_tuned_cls_s0", "chefer"),
+        ("ConvNeXt-B cls", zc, "convnext_tuned_cls_s0", "gradcam"),
+    ]
+    ncols = len(cols)
+    fig, axs = plt.subplots(len(sel), ncols, figsize=(COL2 * 0.96, COL2 * 0.96 * len(sel) / ncols * 1.03))
     for i, f in enumerate(sel):
         p, (y, box) = boxes[f]
         im = Image.open(p).convert("RGB").resize((T, T), Image.BICUBIC)
-        for j in range(4):
+        for j, (title, npz, model, method) in enumerate(cols):
             ax = axs[i, j]
-            if j == 0:
+            if npz is None:
                 ax.imshow(im)
             else:
-                m = z[f"{models[j - 1]}|{f}|chefer"].astype(np.float32)
+                m = npz[f"{model}|{f}|{method}"].astype(np.float32)
                 ax.imshow(overlay(im, m / (m.max() + 1e-12), box, T))
             _clean(ax)
             if i == 0:
-                ax.set_title(titles[j], fontsize=9, pad=4)
+                ax.set_title(title, fontsize=8.5, pad=4)
     plt.subplots_adjust(wspace=0.025, hspace=0.025)
     fig.savefig(f"{OUT}/xai_examples.png", dpi=300, bbox_inches="tight"); fig.savefig(f"{OUT}/xai_examples.pdf", dpi=300, bbox_inches="tight")
-    plt.close(fig); print("saved xai_examples (Chefer, X2)")
+    plt.close(fig); print("saved xai_examples (Chefer + ConvNeXt-B Grad-CAM, X2)")
 
 
 def fig_leakage(root):

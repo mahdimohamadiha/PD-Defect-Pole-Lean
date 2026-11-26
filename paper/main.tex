@@ -23,7 +23,6 @@
 \graphicspath{{figures/}}
 \newcommand{\cls}{\texttt{cls}}
 \newcommand{\mt}{\texttt{mt}}
-\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 \renewcommand\Affilfont{\small}
 
 \title{A Controlled, Pre-specified Evaluation of Multi-task Learning\\ for Utility-Pole Lean Assessment}
@@ -109,7 +108,7 @@ on DINOv2, DINOv2 with registers, or ConvNeXt-Base (with or without keypoint pos
 (\cref{sec:main,sec:h1,sec:h3}). Angle-aware soft targets improve calibration, but controls with shuffled
 angles and with uniform smoothing show that this gain comes from smoothing rather than from the angle
 (\cref{sec:h2}). Finally, saliency and occlusion analyses show that all models rely on the pole and on its
-surroundings, that keypoint supervision increases the reliance on the pole only for one of the two backbones,
+surroundings, that keypoint supervision increases the reliance on the pole only for one of the three backbones,
 and that better pole-focused attention does not go with higher accuracy (\cref{sec:xai}).
 
 % =====================================================================================================
@@ -258,7 +257,7 @@ To test a non-transformer architecture under the same framework, we also evaluat
   box/.style={draw, rounded corners=2pt, align=center, minimum height=7mm, inner sep=3pt},
   arr/.style={-{Stealth[length=2mm]}, thick}]
   \node[box] (img) {image\\$448\times448$};
-  \node[box, right=of img, minimum height=16mm, fill=blue!6] (bb) {ViT-B/14\\(DINOv2 or\\DINOv2-reg)\\fully fine-tuned};
+      \node[box, right=of img, minimum height=16mm, fill=blue!6] (bb) {Backbone\\(DINOv2, DINOv2-reg,\\or ConvNeXt-B)\\fully fine-tuned};
   \node[box, right=of bb, yshift=6mm] (pool) {[CLS ; mean(patches)]};
   \node[box, right=of pool, fill=blue!6] (ch) {cls head};
   \node[box, right=of ch] (cl) {Leaned / Straight / Rejected\\[1pt]{\scriptsize $\mathcal{L}_{\mathrm{cls}}$: weighted CE}};
@@ -637,6 +636,9 @@ DINOv2 soft \cls{}  & 1.64 & 52.0\% & 2.1\% & 91.4\% & 47.3\% \\
 DINOv2 soft \mt{}   & 1.71 & 51.7\% & 2.4\% & 89.7\% & 49.4\% \\
 DINOv2-reg \cls{}   & 2.26 & 49.4\% & 2.1\% & 88.1\% & 53.4\% \\
 DINOv2-reg \mt{}    & 2.58 & 45.9\% & 1.8\% & 87.9\% & 55.0\% \\
+\addlinespace
+ConvNeXt-B \cls{}   & 2.09 & 58.3\% & 6.2\% & 88.6\% & 7.7\% \\
+ConvNeXt-B \mt{}    & 2.30 & 47.8\% & 4.4\% & 87.4\% & 11.2\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -664,7 +666,7 @@ most faithful method, closely followed by the CLS attention; attention rollout \
 less faithful and fails the sanity check, and the last-block Grad-CAM is barely better than a random order.
 CLS attention is the only method that is both faithful and clearly sensitive to the model. Following the
 pre-specified rule, \cref{fig:xai} shows the maps of the most faithful method for the first four images of a
-pre-specified random sample (seed-0 models; green: GT pole box). For all three models the relevance lies along the pole shaft, and it
+pre-specified random sample (seed-0 models; green: GT pole box). For all four models (including ConvNeXt-Base via last-stage Grad-CAM) the relevance lies along the pole shaft, and it
 is more concentrated for DINOv2 with registers.
 
 \begin{table}[!htb]
@@ -676,10 +678,12 @@ is more concentrated for DINOv2 with registers.
 \toprule
 method & energy-in-box & deletion gain [95\% CI] & sanity \\
 \midrule
-Grad-CAM (last block)                     & 8--11\%  & $+0.29$ [$+0.22, +0.37$] & 0.08 \\
-attention rollout                         & 10--11\% & $+2.44$ [$+2.15, +2.73$] & 0.96 \\
-CLS attention (last layer)                & 38--55\% & $+4.66$ [$+4.35, +4.97$] & 0.03 \\
-\citet{chefer2021transformer}             & 35--49\% & $+5.80$ [$+5.50, +6.08$] & 0.70 \\
+Grad-CAM (ViT, last block)                     & 8--11\%  & $+0.29$ [$+0.22, +0.37$] & 0.08 \\
+attention rollout    (ViT)                      & 10--11\% & $+2.44$ [$+2.15, +2.73$] & 0.96 \\
+CLS attention (ViT, last layer)                & 38--55\% & $+4.66$ [$+4.35, +4.97$] & 0.03 \\
+\citet{chefer2021transformer}  (ViT)            & 35--49\% & $+5.80$ [$+5.50, +6.08$] & 0.70 \\
+\addlinespace
+Grad-CAM (ConvNeXt-B, last stage)         & 57\%     & $+4.19$ [$+3.83, +4.56$] & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -687,7 +691,7 @@ CLS attention (last layer)                & 38--55\% & $+4.66$ [$+4.35, +4.97$] 
 \begin{figure}[!htb]
   \centering
   \includegraphics[width=\linewidth]{xai_examples}
-  \caption{Relevance maps of the most faithful attribution method for four randomly drawn test images.}
+  \caption{Relevance maps of the most faithful attribution method for four randomly drawn test images (Chefer for ViT and last-stage Grad-CAM for ConvNeXt-B).}
   \label{fig:xai}
 \end{figure}
 
@@ -756,18 +760,17 @@ protocol for multi-task use of the dataset.
 % =====================================================================================================
 \section*{Data and code availability}
 PD-Defect is available under CC BY 4.0 \citep{pddefect_data}. Code, analysis scripts, all per-run and
-per-image results and the pre-specification history are available from the corresponding author on reasonable
-request.
+per-image results and the pre-specification history are publicly available in the project's GitHub repository (\texttt{mahdimohamadiha/PD-Defect-Pole-Lean}), and model checkpoints are publicly available in the project's Hugging Face repository (\texttt{northlattice/pd-defect-pole-lean-checkpoints}).
 
 \section*{Acknowledgements}
 We thank the creators of PD-Defect for releasing the dataset under an open licence. This research received no specific grant from any funding agency in the public,
 commercial or not-for-profit sectors.
 
 \section*{Use of AI assistance}
-During this study the first author used Claude, an AI assistant developed by Anthropic, as a research
-assistant. Under the authors' direction, it searched the literature, wrote and ran the experiment and analysis
+During this study the first author used Claude (Anthropic) and Gemini (Google) as research
+assistants. Under the authors' direction, they searched the literature, wrote and ran the experiment and analysis
 code, proposed experimental designs that the authors reviewed and approved before they were run, performed the
-statistical analyses, produced the figures and drafted the text of the manuscript. No other AI tool was used.
+statistical analyses, produced the figures and drafted the text of the manuscript.
 The authors checked the results and the text and take full responsibility for the content of this article.
 
 \appendix
@@ -805,27 +808,27 @@ DINOv2 with registers; feeding the predicted geometry to the classifier lowers M
 \label{app:search}
 \Cref{tab:search} lists the validation Macro-F1 of each configuration (mean over the two search seeds).
 Configuration 7 was selected for both variants on DINOv2; on DINOv2 with registers, configuration 0 was
-selected for \cls{} and configuration 4 for \mt{}.
+selected for \cls{} and configuration 4 for \mt{}. On ConvNeXt-Base, configuration 6 was selected for \cls{} and configuration 4 for \mt{}.
 
 \begin{table}[!ht]
 \centering
 \caption{Validation Macro-F1 of the equal-budget search.}
 \label{tab:search}
 \small
-\begin{tabular}{cccccccc}
+\begin{tabular}{cccccccccc}
 \toprule
- & & & & \multicolumn{2}{c}{DINOv2} & \multicolumn{2}{c}{DINOv2-reg} \\
-\cmidrule(lr){5-6}\cmidrule(lr){7-8}
-cfg & lr backbone & lr head & epochs & \cls{} & \mt{} ($\lambda$) & \cls{} & \mt{} \\
+ & & & & \multicolumn{2}{c}{DINOv2} & \multicolumn{2}{c}{DINOv2-reg} & \multicolumn{2}{c}{ConvNeXt-B} \\
+\cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
+cfg & lr backbone & lr head & epochs & \cls{} & \mt{} ($\lambda$) & \cls{} & \mt{}& \cls{} & \mt{}  \\
 \midrule
-0 & $2\times10^{-5}$ & $10^{-3}$          & 15 & 79.47 & 83.43 (5)  & 84.46 & 84.39 \\
-1 & $5\times10^{-5}$ & $3\times10^{-4}$   & 15 & 79.33 & 81.78 (10) & 82.20 & 81.92 \\
-2 & $3\times10^{-5}$ & $10^{-3}$          & 15 & 81.78 & 82.87 (10) & 83.15 & 83.75 \\
-3 & $10^{-5}$        & $10^{-3}$          & 25 & 84.36 & 84.60 (2)  & 83.35 & 84.11 \\
-4 & $2\times10^{-5}$ & $3\times10^{-3}$   & 25 & 81.02 & 82.44 (1)  & 83.74 & 84.57 \\
-5 & $3\times10^{-5}$ & $3\times10^{-3}$   & 25 & 82.66 & 82.61 (5)  & 83.02 & 81.64 \\
-6 & $10^{-5}$        & $3\times10^{-3}$   & 25 & 84.64 & 83.56 (1)  & 83.73 & 83.03 \\
-7 & $10^{-5}$        & $3\times10^{-4}$   & 15 & 85.17 & 85.10 (2)  & 83.90 & 83.72 \\
+0 & $2\times10^{-5}$ & $10^{-3}$          & 15 & 79.47 & 83.43 (5)  & 84.46 & 84.39 & 81.34 & 81.59 \\
+1 & $5\times10^{-5}$ & $3\times10^{-4}$   & 15 & 79.33 & 81.78 (10) & 82.20 & 81.92 & 81.95 & 81.99 \\
+2 & $3\times10^{-5}$ & $10^{-3}$          & 15 & 81.78 & 82.87 (10) & 83.15 & 83.75 & 81.60 & 81.41 \\
+3 & $10^{-5}$        & $10^{-3}$          & 25 & 84.36 & 84.60 (2)  & 83.35 & 84.11 & 80.82 & 81.68 \\
+4 & $2\times10^{-5}$ & $3\times10^{-3}$   & 25 & 81.02 & 82.44 (1)  & 83.74 & 84.57 & 81.33 & 82.04 \\
+5 & $3\times10^{-5}$ & $3\times10^{-3}$   & 25 & 82.66 & 82.61 (5)  & 83.02 & 81.64 & 81.03 & 81.07 \\
+6 & $10^{-5}$        & $3\times10^{-3}$   & 25 & 84.64 & 83.56 (1)  & 83.73 & 83.03 & 82.06 & 81.11 \\
+7 & $10^{-5}$        & $3\times10^{-4}$   & 15 & 85.17 & 85.10 (2)  & 83.90 & 83.72 & 80.01 & 81.70 \\
 \bottomrule
 \end{tabular}
 \end{table}

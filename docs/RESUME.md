@@ -1,6 +1,6 @@
 # How to resume this project
 
-Last updated: 2026-11-23, after batch `b4a_final_dinov2`.
+Last updated: 2026-11-26, after ConvNeXt (b9–b11, xai2_convnext) completion and handover to Gemini.
 
 ## Where everything is
 | what | where |
@@ -11,8 +11,7 @@ Last updated: 2026-11-23, after batch `b4a_final_dinov2`.
 | batch definitions (the `plan` cell of each batch) | `tools/plans/<batch>.py` |
 | fine-tuned checkpoints | HF `northlattice/pd-defect-pole-lean-checkpoints` (`<batch>/<tag>_s<seed>.pt`) |
 | literature search | `docs/literature_search_2026-11-23.md` (+ browser report) |
-| project rules | `CLAUDE.md` |
-
+| project rules | `CLAUDE.md`, `GEMINI.md` |
 ## Done
 - `b1_dinov2`: DINOv2 × {cls, mt, mt_geo}, default hyper-parameters
 - `b2_dinov2reg_geofix`: DINOv2-reg × {cls, mt} + DINOv2 `mt_geo_d` (checkpoints on HF)
@@ -79,3 +78,15 @@ the batch's existing results back into `/marimo/results/<batch>/`.
 - Next: the user runs `docs/citation_check_prompt.md` in Claude chat (browser) with the paper zip, then sends
   back main.tex, references.bib and the report. Review every change against the report before merging, compile
   and commit. Then the supervisor reviews the draft.
+## Status 2026-11-26 (handover to Gemini)
+- **ConvNeXt-Base (22k) complete (`b9_tune_convnext`, `b10_final_convnext`, `b11_convnext_kppos`, `xai2_convnext`):**
+  - `b10 cls`: Acc `82.82 ± 0.76`, Macro-F1 `79.54 ± 0.77` (MV `80.70`).
+  - `b10 mt` (`H4`): Acc `82.53 ± 0.67`, Macro-F1 `78.97 ± 0.66` (Δ `-0.57`, n.s.); keypoint head failed to learn pole axis (angle corr `0.13`, `MAE 3.28°`) due to lack of absolute position codes in ConvNeXt last-stage features.
+  - `b11 mt + kp_pos` (`H4b`, `--kp_pos sincos`): Acc `81.20 ± 1.67`, Macro-F1 `77.53 ± 1.53` (MV `80.47`, Δ vs `cls` `-2.01`, n.s.); angle corr recovered to `0.87 ± 0.08` (`MAE 1.79°`, median `1.05°`), confirming keypoint supervision is still null on CNN.
+  - `xai2_convnext`: `mt - cls` pole reliance difference `+0.205` (`Wilcoxon p = 0.7529`, n.s.).
+- **Hugging Face (`northlattice/pd-defect-pole-lean-checkpoints`):** Verified all 9 ConvNeXt checkpoints (`b10_final_convnext/` ×6, `b11_convnext_kppos/` ×3) and earlier final batches (`b2`, `b4a`, `b4b`, `b5`, `b7`, `b8`) are uploaded (`10.8 GB`, 72 commits) and HF model card updated.
+- **Citation check (`docs/citation_check_report.md`):** 3 passes complete; open items remain for Step 2.
+- **Next (tracked in `GEMINI.md`):**
+  - Step 2: Resolve open items from `docs/citation_check_report.md` in `paper/references.bib` and `paper/main.tex`.
+  - Step 3: Integrate ConvNeXt (`H4`, `H4b`, `xai2_convnext`) into `paper/main.tex` (and check `paper/make_figures.py` / figures).
+  - Step 4: Final cleanup (`\todo`, Data & Code Availability, consistency check) for supervisor review and arXiv.

@@ -132,8 +132,8 @@ uncalibrated image they extract line segments and vanishing points, group pairs 
 orientation into candidate pole faces and wires, and reconstruct both, with their tilt angles, in a relative
 3D scene without any training. They compare the estimated poles with ground-truth annotations on leaning-pole
 datasets, using deep segmentation networks as baselines, and do not address image-level lean classification;
-their model is hand-designed geometry, whereas ours is trained jointly for classification and keypoints and
-evaluated in controlled, pre-specified experiments.
+their method relies on hand-designed geometry, whereas we evaluate whether joint classification and keypoint
+supervision improves an end-to-end classifier under a fixed experimental protocol.
 
 Auxiliary tasks can act as an inductive bias and a regulariser \citep{caruana1997multitask,ruder2017overview};
 keypoints can be regressed directly from deep features \citep{toshev2014deeppose}, and our
@@ -174,10 +174,10 @@ against analytical flexibility \citep{nosek2018preregistration}; we adopt a ligh
 \subsection{Dataset}
 We use the \texttt{pole\_lean\_assessment} subset of PD-Defect \citep{pddefect_data} (CC BY 4.0), which was
 captured with smartphones in Eastern Andhra Pradesh, India. Its classification part has an official split of
-1706 / 341 / 227 images (train / validation / test) over three classes; counted from the released files, these
-are Leaned (619 images), Straight (1281) and Rejected (374). The dataset does not define Rejected; on
-inspection, it contains images that are unsuitable for lean assessment, for example because of strong
-perspective, several poles or poor visibility. A separate keypoint part
+1706 / 341 / 227 images (train / validation / test) over three classes: Leaned (619 images), Straight (1281)
+and Rejected (374, split 280 / 57 / 37), as counted from the released files and documented in the
+\texttt{pole\_lean\_assessment} subset card. In the subset documentation, Rejected is defined exclusively for
+the classification task as images where the primary pole cannot be reliably assessed because of occluded top or base, strong perspective distortion, or alignment ambiguity (the separate object-detection and keypoint subsets do not include a Rejected class). A separate keypoint part
 (1438 / 181 / 179 images) annotates, for each pole, a bounding box and two keypoints at the bottom and top of
 the pole axis. Only the official classification split is used for training, model selection and testing.
 

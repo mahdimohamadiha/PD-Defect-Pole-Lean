@@ -25,6 +25,6 @@ This file tracks the active rules, decisions, and step-by-step progress after ha
 
 ## Completion roadmap & step log
 - [x] **Step 1 (2026-11-26):** Handover alignment — reviewed `CLAUDE.md`, `docs/RESUME.md`, `docs/citation_check_report.md`, ConvNeXt results (`b9`–`b11`, `xai2_convnext`), and HF checkpoints; created `GEMINI.md` and updated `docs/RESUME.md`.
-- [ ] **Step 2:** Resolve open citation-check items and venue spot-checks in `paper/references.bib` and `paper/main.tex`.
+- [x] **Step 2 (2026-11-26):** Verified official `Rejected` definition (374 images: 280/57/37, classification-only) directly from `EPDCL/pd-defect/pole_lean_assessment/README.md` and updated `paper/main.tex`; independently verified and kept `alam2020resilience` and `chen2023inclination`; neutralized Wang & Wei (EAAI 2026) comparison wording in `paper/main.tex`; spot-checked remaining `references.bib` venues (TMLR 2024, ICLR 2024, MLSys 2021, JAIR 2021, ACL 2020, NeurIPS 2018).
 - [ ] **Step 3:** Integrate ConvNeXt (`H4`, `H4b`, `xai2_convnext`) into `paper/main.tex` (and update `paper/make_figures.py` / figures if needed).
 - [ ] **Step 4:** Final cleanup (`\todo` removal, Data & Code Availability links, consistency audit) for supervisor review and arXiv submission.

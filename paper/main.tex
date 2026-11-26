@@ -42,7 +42,7 @@
 Automated assessment of leaning utility poles from smartphone images can support the inspection of power
 distribution networks, and pole-axis keypoints are an obvious source of extra supervision for this task.
 We study whether such geometric supervision improves image-level lean classification (Leaned / Straight /
-Rejected) on the public PD-Defect dataset, using fully fine-tuned DINOv2 vision transformers. All comparisons
+Rejected) on the public PD-Defect dataset, using fully fine-tuned DINOv2 vision transformers and a convolutional backbone (ConvNeXt-Base). All comparisons
 use equal-budget hyper-parameter tuning on validation data, several training seeds, a single evaluation on
 the official test split, and paired statistics (bootstrap confidence intervals, McNemar tests with Holm
 correction). Every follow-up hypothesis was specified in a time-stamped version-controlled repository before it was run.
@@ -51,13 +51,13 @@ combining the two tasks naively leaks test data; we give a leakage-free protocol
 angles reveal that the binary lean label follows an implicit threshold of about $3^\circ$ (a single
 threshold reproduces 91.6\% of the test labels), not the $10^\circ$ rule used by the dataset authors, and that
 residual errors concentrate in the ambiguous 2--$6^\circ$ band. Third, after tuning, an auxiliary keypoint
-loss does not change classification quality on either backbone ($+1.2$ and $-1.3$ Macro-F1 points, both
-confidence intervals containing zero), nor with 10--50\% of the training data, nor with stronger photometric
+loss does not change classification quality on any of the three backbones ($+1.2$, $-1.3$, and $-0.6$ Macro-F1 points, or $-2.0$ after adding 2D sinusoidal position codes so the convolutional keypoint head learns the pole axis; all
+confidence intervals contain zero), nor with 10--50\% of the training data, nor with stronger photometric
 augmentation. Angle-aware soft targets improve calibration (test NLL $0.58 \rightarrow 0.48$), but controls
 with shuffled angles or uniform smoothing of the same mass do equally well, so the gain comes from target
-smoothing rather than from geometry. Finally, saliency and occlusion analyses show that every model relies causally on the pole
+smoothing rather than from geometry. Finally, saliency and occlusion analyses show that all three backbones rely causally on the pole
 (blurring it flips about half of the predictions) and also on its surroundings; keypoint supervision increases
-this reliance only for DINOv2 with registers, and the backbone whose attention is most pole-focused is the less
+this reliance only for DINOv2 with registers (not for plain DINOv2 or ConvNeXt-Base), and the ViT backbone whose attention is most pole-focused is the less
 accurate one. The joint model still predicts the pole axis (mean angle error $0.97^\circ$) at no
 cost in accuracy.
 \end{abstract}
@@ -105,7 +105,7 @@ leakage-free protocol throughout (\cref{sec:leakage}). Ground-truth axis angles 
 label follows an implicit threshold of about $3^\circ$, that current models are within about one point of the
 resulting label-consistency ceiling on Leaned vs.\ Straight, and that errors concentrate in the 2--$6^\circ$
 band (\cref{sec:labels,sec:errors}). After equal-budget tuning, keypoint supervision does not change Macro-F1
-on DINOv2 or DINOv2 with registers, nor with less training data or stronger photometric augmentation
+on DINOv2, DINOv2 with registers, or ConvNeXt-Base (with or without keypoint position codes), nor with less training data or stronger photometric augmentation
 (\cref{sec:main,sec:h1,sec:h3}). Angle-aware soft targets improve calibration, but controls with shuffled
 angles and with uniform smoothing show that this gain comes from smoothing rather than from the angle
 (\cref{sec:h2}). Finally, saliency and occlusion analyses show that all models rely on the pole and on its
@@ -248,6 +248,8 @@ patch tokens, followed by LayerNorm, dropout (0.2) and a linear layer with three
 uses two learned queries (bottom, top) that attend to the patch tokens through one multi-head
 cross-attention layer (8 heads); each output passes through LayerNorm, a two-layer MLP with GELU and a
 sigmoid, giving normalised coordinates $(x_b, y_b, x_t, y_t)$. Register tokens are excluded from both heads.
+
+To test a non-transformer architecture under the same framework, we also evaluate ConvNeXt-Base pretrained on ImageNet-22k \citep{liu2022convnext} (88M parameters), fully fine-tuned at $448 \times 448$ pixels. Its final-stage $14 \times 14$ feature grid (1024 channels) replaces the ViT patch tokens, and its globally pooled, LayerNorm-processed feature replaces the CLS token, while the classification and keypoint heads, loss functions, data splits, and augmentation protocol remain unchanged. In an exploratory follow-up (H4b), fixed 2D sinusoidal-cosine position codes (\texttt{--kp\_pos sincos}) are added only to the LayerNorm-processed tokens entering the keypoint cross-attention layer so that classification features remain untouched.
 
 \begin{figure}[t]
 \centering
@@ -393,6 +395,10 @@ backbone & model & Acc. & Macro-F1 & F1$_\mathrm{L}$ & F1$_\mathrm{S}$ & F1$_\ma
 \multirow{2}{*}{DINOv2-reg} & \cls{} & 83.99 $\pm$ 2.22 & 81.31 $\pm$ 2.64 & 77.9 & 89.1 & 76.9 & 81.47 \\
                             & \mt{}  & 83.26 $\pm$ 0.88 & 79.97 $\pm$ 0.97 & 75.6 & 89.2 & 75.1 & 83.60 \\
 \midrule
+\multirow{3}{*}{ConvNeXt-B} & \cls{} & 82.82 $\pm$ 0.76 & 79.54 $\pm$ 0.77 & 77.0 & 88.5 & 73.1 & 80.70 \\
+                             & \mt{}  & 82.53 $\pm$ 0.67 & 78.97 $\pm$ 0.66 & 76.6 & 88.5 & 71.8 & 80.04 \\
+                             & \mt{} (+kp pos) & 81.20 $\pm$ 1.67 & 77.53 $\pm$ 1.53 & 75.1 & 87.6 & 69.9 & 80.47 \\
+\midrule
 DINOv3 (card)$^\dagger$     & --     & 84.14 & 81.74 & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular}}
@@ -404,6 +410,8 @@ comparison & $\Delta$ Macro-F1 [95\% CI] & McNemar $p$ (Holm) \\
 \midrule
 DINOv2: \mt{} $-$ \cls{}     & $+1.23$ [$-2.01, +4.70$] & 0.24 (0.29) \\
 DINOv2-reg: \mt{} $-$ \cls{} & $-1.34$ [$-3.93, +1.15$] & 0.24 (0.71) \\
+ConvNeXt-B (\mt{} $-$ \cls{}) & $-0.57$ [$-2.56, +1.25$] & 1.00 (1.00) \\
+ConvNeXt-B (\mt{}+kp pos $-$ \cls{}) & $-2.01$ [$-4.65, +0.52$] & 1.00 (1.00) \\
 \bottomrule
 \end{tabular}
 
@@ -554,6 +562,13 @@ soft $-$ uniform-smoothing control           & $+2.19$ [$+0.13, +4.35$] \\
   \label{fig:reliability}
 \end{figure}
 
+\subsection{A convolutional backbone}\label{sec:h4}
+Under equal-budget hyperparameter tuning (the same eight configurations and two validation seeds), \cls{} selected \texttt{lr\_backbone} $= 1\times 10^{-5}$, \texttt{lr\_head} $= 3\times 10^{-3}$, and 25 epochs (validation Macro-F1 $82.06 \pm 0.44$), while \mt{} selected $2\times 10^{-5}$, $3\times 10^{-3}$, 25 epochs, and $\lambda = 1$ (validation Macro-F1 $82.04 \pm 1.73$), with all 16 configurations spanning $80.0$--$82.1$.
+
+On the test split (H4), keypoint supervision again produced no improvement: the \mt{} $-$ \cls{} difference is $-0.57$ Macro-F1 points [$95\%$ CI $-2.56, +1.25$] (McNemar $p = 1.0$). Overall, ConvNeXt-Base trails DINOv2 (\cls{}: $-3.96$ [$-8.26, +0.02$], Holm $p = 0.46$; \mt{}: $-5.75$ [$-10.55, -1.34$], Holm $p = 0.09$), with the drop concentrated on the \texttt{Rejected} class (F1 $72$--$73$ vs.\ $80$--$81$), whereas \texttt{Leaned}-vs.-\texttt{Straight} accuracy remains $88.3\%$ (\cls{}) and $88.1\%$ (\mt{}).
+
+Inspection of the keypoint predictions revealed that in H4 the convolutional keypoint head did not learn the pole axis (angle correlation $0.13$, $\text{MAE} = 3.28^\circ$ on the 143 test images with ground-truth keypoints), because ConvNeXt's final-stage features lack explicit absolute position codes. In an exploratory follow-up (H4b), adding fixed 2D sinusoidal-cosine position codes to the keypoint cross-attention input raised angle correlation to $0.87 \pm 0.08$ ($0.92$ on seed~0) and reduced $\text{MAE}$ to $1.79^\circ$ (median $1.05^\circ$), yet classification still did not improve (Macro-F1 $77.53 \pm 1.53$; $-2.01$ [$-4.65, +0.52$] vs.\ \cls{} and $-1.44$ [$-3.38, +0.38$] vs.\ H4 \mt{}, McNemar $p = 1.0$).
+
 \subsection{Where does the model look?}
 \label{sec:xai}
 Even without an accuracy gain, keypoint supervision might make the classifier rely more on the pole than
@@ -676,11 +691,13 @@ CLS attention (last layer)                & 38--55\% & $+4.66$ [$+4.35, +4.97$] 
   \label{fig:xai}
 \end{figure}
 
+For ConvNeXt-Base, occlusion and saliency patterns are consistent with the ViT findings. Blurring the pole flips $58.3\%$ (\cls{}) and $47.8\%$ (\mt{}) of predictions, compared with $6.2\%$ and $4.4\%$ for a random box; the pole-reliance difference (\mt{} $-$ \cls{}) is $+0.21$ [$+0.01, +0.40$], which is non-significant (Wilcoxon $p = 0.75$). Keeping only the pole and blurring the surroundings reduces accuracy to $8$--$11\%$ (with roughly $90\%$ of predictions collapsing to \texttt{Rejected}). Unlike in ViT, where last-block Grad-CAM barely exceeds random ordering (deletion gain $+0.29$), standard Grad-CAM on the final CNN stage is faithful, placing $57\%$ of its energy inside the pole box and achieving a deletion gain of $+4.19$ [$+3.83, +4.56$] over random ordering.
+
 % =====================================================================================================
 \section{Discussion}
 \label{sec:discussion}
 
-Across four controlled interventions (tuning-matched keypoint supervision, augmentation, reduced data and soft targets), no change to the model or its training raised classification quality
+Across four controlled interventions (tuning-matched keypoint supervision, augmentation, reduced data and soft targets) and a convolutional backbone (ConvNeXt-Base, with or without 2D keypoint position codes), no change to the model or its training raised classification quality
 beyond run-to-run noise. The label analysis explains why: on Leaned vs.\ Straight the models are within about
 one point of what a perfect angle measurement achieves under the annotators' implicit $3^\circ$ threshold, and
 most of the remaining errors are on poles whose label is genuinely ambiguous. Further gains will come from the
@@ -714,8 +731,8 @@ of a few hundred images, single-seed comparisons and untuned baselines are not s
 \label{sec:limitations}
 The study uses a single dataset from one region, and we know of no other public dataset with image-level lean
 labels and axis keypoints; the conclusions may not hold for other annotation protocols. With 227 test images,
-effects of one to two points cannot be resolved, which our confidence intervals make explicit. We compared two
-ViT-B backbones from one family, and DINOv3, used for the dataset-card baseline, could not be evaluated because
+effects of one to two points cannot be resolved, which our confidence intervals make explicit. We compared three
+backbones from two architectural families (two self-supervised ViT-B backbones from the DINOv2 family and one convolutional ConvNeXt-Base backbone pretrained on ImageNet-22k), and DINOv3, used for the dataset-card baseline, could not be evaluated because
 its weights are gated. The follow-up experiments reuse hyper-parameters tuned for the baseline, which may
 disadvantage the interventions; we accepted this to keep the number of test evaluations small. The
 saliency measures are correlational, and the occlusion test replaces regions by a blurred version, which also
@@ -728,7 +745,7 @@ was not pre-specified.
 \label{sec:conclusion}
 We evaluated whether pole-axis keypoints improve image-level lean classification on PD-Defect under
 controlled conditions. They do not: after equal-budget tuning, with less data, with stronger augmentation and
-with angle-aware targets, the effects stay within the noise of fine-tuning. All models rely on the pole and
+with angle-aware targets, or on a convolutional ConvNeXt-Base backbone (with or without 2D keypoint position codes), the effects stay within the noise of fine-tuning. All models rely on the pole and
 on its surroundings, and keypoint supervision increases the reliance on the pole only for one backbone,
 without an accuracy gain. The binding constraint is the label, which follows an implicit
 $3^\circ$ threshold with an ambiguous band around it. Softened targets improve calibration, but plain

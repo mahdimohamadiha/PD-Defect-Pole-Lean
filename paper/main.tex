@@ -257,7 +257,7 @@ To test a non-transformer architecture under the same framework, we also evaluat
   box/.style={draw, rounded corners=2pt, align=center, minimum height=7mm, inner sep=3pt},
   arr/.style={-{Stealth[length=2mm]}, thick}]
   \node[box] (img) {image\\$448\times448$};
-      \node[box, right=of img, minimum height=16mm, fill=blue!6] (bb) {Backbone\\(DINOv2, DINOv2-reg,\\or ConvNeXt-B)\\fully fine-tuned};
+  \node[box, right=of img, minimum height=16mm, fill=blue!6] (bb) {Backbone\\(DINOv2, DINOv2-reg,\\or ConvNeXt-B)\\fully fine-tuned};
   \node[box, right=of bb, yshift=6mm] (pool) {[CLS ; mean(patches)]};
   \node[box, right=of pool, fill=blue!6] (ch) {cls head};
   \node[box, right=of ch] (cl) {Leaned / Straight / Rejected\\[1pt]{\scriptsize $\mathcal{L}_{\mathrm{cls}}$: weighted CE}};
@@ -678,10 +678,10 @@ is more concentrated for DINOv2 with registers.
 \toprule
 method & energy-in-box & deletion gain [95\% CI] & sanity \\
 \midrule
-Grad-CAM (ViT, last block)                     & 8--11\%  & $+0.29$ [$+0.22, +0.37$] & 0.08 \\
-attention rollout    (ViT)                      & 10--11\% & $+2.44$ [$+2.15, +2.73$] & 0.96 \\
-CLS attention (ViT, last layer)                & 38--55\% & $+4.66$ [$+4.35, +4.97$] & 0.03 \\
-\citet{chefer2021transformer}  (ViT)            & 35--49\% & $+5.80$ [$+5.50, +6.08$] & 0.70 \\
+Grad-CAM (ViT, last block)                & 8--11\%  & $+0.29$ [$+0.22, +0.37$] & 0.08 \\
+attention rollout (ViT)                   & 10--11\% & $+2.44$ [$+2.15, +2.73$] & 0.96 \\
+CLS attention (ViT, last layer)           & 38--55\% & $+4.66$ [$+4.35, +4.97$] & 0.03 \\
+\citet{chefer2021transformer} (ViT)       & 35--49\% & $+5.80$ [$+5.50, +6.08$] & 0.70 \\
 \addlinespace
 Grad-CAM (ConvNeXt-B, last stage)         & 57\%     & $+4.19$ [$+3.83, +4.56$] & -- \\
 \bottomrule
@@ -691,7 +691,7 @@ Grad-CAM (ConvNeXt-B, last stage)         & 57\%     & $+4.19$ [$+3.83, +4.56$] 
 \begin{figure}[!htb]
   \centering
   \includegraphics[width=\linewidth]{xai_examples}
-  \caption{Relevance maps of the most faithful attribution method for four randomly drawn test images (Chefer for ViT and last-stage Grad-CAM for ConvNeXt-B).}
+  \caption{Relevance maps of the most faithful attribution method per architecture (\citet{chefer2021transformer} for ViT models; last-stage Grad-CAM for ConvNeXt-B) on four randomly drawn test images (green: ground-truth pole box).}
   \label{fig:xai}
 \end{figure}
 
@@ -760,18 +760,22 @@ protocol for multi-task use of the dataset.
 % =====================================================================================================
 \section*{Data and code availability}
 PD-Defect is available under CC BY 4.0 \citep{pddefect_data}. Code, analysis scripts, all per-run and
-per-image results and the pre-specification history are publicly available in the project's GitHub repository (\texttt{mahdimohamadiha/PD-Defect-Pole-Lean}), and model checkpoints are publicly available in the project's Hugging Face repository (\texttt{northlattice/pd-defect-pole-lean-checkpoints}).
+per-image results and the pre-specification history are publicly available at
+\url{https://github.com/mahdimohamadiha/PD-Defect-Pole-Lean}, and all fine-tuned model checkpoints are
+available at \url{https://huggingface.co/northlattice/pd-defect-pole-lean-checkpoints}.
 
 \section*{Acknowledgements}
 We thank the creators of PD-Defect for releasing the dataset under an open licence. This research received no specific grant from any funding agency in the public,
 commercial or not-for-profit sectors.
 
 \section*{Use of AI assistance}
-During this study the first author used Claude (Anthropic) and Gemini (Google) as research
-assistants. Under the authors' direction, they searched the literature, wrote and ran the experiment and analysis
-code, proposed experimental designs that the authors reviewed and approved before they were run, performed the
-statistical analyses, produced the figures and drafted the text of the manuscript.
-The authors checked the results and the text and take full responsibility for the content of this article.
+During this study the first author used Claude (developed by Anthropic) and Gemini (developed by Google) as
+research assistants. Under the authors' direction, Claude assisted with literature search, writing and running
+the experiment and analysis code, proposing experimental designs reviewed and approved by the authors before
+execution, performing statistical analyses, generating initial figures and drafting the manuscript; Gemini
+assisted with dataset and citation verification, integrating the convolutional backbone (ConvNeXt-Base)
+results, updating tables and figures, and finalising the manuscript. The authors checked all results and text
+and take full responsibility for the content of this article.
 
 \appendix
 \renewcommand{\thetable}{\Alph{section}.\arabic{table}}
@@ -808,18 +812,20 @@ DINOv2 with registers; feeding the predicted geometry to the classifier lowers M
 \label{app:search}
 \Cref{tab:search} lists the validation Macro-F1 of each configuration (mean over the two search seeds).
 Configuration 7 was selected for both variants on DINOv2; on DINOv2 with registers, configuration 0 was
-selected for \cls{} and configuration 4 for \mt{}. On ConvNeXt-Base, configuration 6 was selected for \cls{} and configuration 4 for \mt{}.
+selected for \cls{} and configuration 4 for \mt{}; on ConvNeXt-Base, configuration 6 was selected for \cls{}
+and configuration 4 for \mt{}.
 
 \begin{table}[!ht]
 \centering
 \caption{Validation Macro-F1 of the equal-budget search.}
 \label{tab:search}
 \small
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{cccccccccc}
 \toprule
  & & & & \multicolumn{2}{c}{DINOv2} & \multicolumn{2}{c}{DINOv2-reg} & \multicolumn{2}{c}{ConvNeXt-B} \\
 \cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
-cfg & lr backbone & lr head & epochs & \cls{} & \mt{} ($\lambda$) & \cls{} & \mt{}& \cls{} & \mt{}  \\
+cfg & lr backbone & lr head & epochs & \cls{} & \mt{} ($\lambda$) & \cls{} & \mt{} & \cls{} & \mt{} \\
 \midrule
 0 & $2\times10^{-5}$ & $10^{-3}$          & 15 & 79.47 & 83.43 (5)  & 84.46 & 84.39 & 81.34 & 81.59 \\
 1 & $5\times10^{-5}$ & $3\times10^{-4}$   & 15 & 79.33 & 81.78 (10) & 82.20 & 81.92 & 81.95 & 81.99 \\
@@ -830,7 +836,7 @@ cfg & lr backbone & lr head & epochs & \cls{} & \mt{} ($\lambda$) & \cls{} & \mt
 6 & $10^{-5}$        & $3\times10^{-3}$   & 25 & 84.64 & 83.56 (1)  & 83.73 & 83.03 & 82.06 & 81.11 \\
 7 & $10^{-5}$        & $3\times10^{-4}$   & 15 & 85.17 & 85.10 (2)  & 83.90 & 83.72 & 80.01 & 81.70 \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \bibliographystyle{unsrtnat}

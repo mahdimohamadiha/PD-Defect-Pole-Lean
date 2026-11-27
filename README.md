@@ -11,18 +11,21 @@ auxiliary head that regresses the pole axis (bottom and top keypoints).
 > labels) improves calibration, but the H2b controls show that this comes from target smoothing, not from the
 > angle. The explainability test (X1) finds that both models attend to the pole, but keypoint supervision does not make attention more pole-focused. The perturbation test (X2) shows that all models depend causally on the pole and partly on its context. H4 repeats
 > the main comparison on a CNN (ConvNeXt-Base): again no effect of keypoint supervision, and ConvNeXt is weaker than
-> DINOv2. The exploratory H4b fixes the ConvNeXt keypoint head (position code) and still finds no gain. A paper
-> draft is in [`paper/`](paper).
+> DINOv2. The exploratory H4b fixes the ConvNeXt keypoint head (position code) and still finds no gain. Manuscript files are in [`paper/`](paper) (arXiv LaTeX draft and *Computer Optics* DOCX/PDF submission in
+> [`paper/computer_optics/`](paper/computer_optics)). All fine-tuned checkpoints are publicly available on
+> Hugging Face at [northlattice/pd-defect-pole-lean-checkpoints](https://huggingface.co/northlattice/pd-defect-pole-lean-checkpoints).
+> Code is released under the [MIT License](LICENSE).
 
 ## How this project was carried out
 
-**AI assistance.** The study was carried out with Claude, an AI assistant developed by Anthropic, working as a
-research assistant under the authors' direction. Claude searched the literature, wrote and ran the experiment and
-analysis code, proposed experimental designs, performed the statistical analyses, produced the figures and drafted
-the manuscript. The authors chose the topic and the dataset, reviewed every design and approved it before it was
-run, made the key decisions (for example the target venue, the follow-up hypotheses to pursue, the deeper
-explainability analysis and the structure of the paper), and checked the results and the text. The paper states
-this in its "Use of AI assistance" section. No other AI tool was used.
+**AI assistance.** During this study the first author used Claude (developed by Anthropic) and Gemini
+(developed by Google) as research assistants under the authors' direction. Claude assisted with literature
+search, writing and running the experiment and analysis code, proposing experimental designs reviewed and
+approved by the authors before execution, performing statistical analyses, generating initial figures and
+drafting the manuscript; Gemini assisted with dataset and citation verification, integrating the convolutional
+backbone (ConvNeXt-Base) results, updating tables and figures, and formatting the manuscript for submission.
+The authors chose the topic and dataset, approved every experimental design, and checked all results and text.
+This disclosure matches the "Use of AI assistance" section of the manuscript.
 
 **Timeline and compute.** All experiments ran between 23 and 25 November 2026 on single-GPU cloud notebooks.
 One training run takes about 4–7 minutes, and runs were queued back to back, so the whole study needed a few

@@ -6,7 +6,7 @@ This file tracks the active rules, decisions, and step-by-step progress after ha
 - Communicate with the user in Persian (Farsi).
 - **Save and commit every change to GitHub (`main`) immediately.** Do not wait for multiple stages to accumulate.
 - **Keep READMEs public-ready.** Keep GitHub `README.md` and the HF model card (`northlattice/pd-defect-pole-lean-checkpoints`) aligned with the latest verified results.
-- **HF anonymity rule (strict):** The HF account (`northlattice`) is deliberately unrelated to the author. Never put the GitHub username, real name, or affiliation on the HF model card or checkpoints repo.
+- **Public release (2026-11-27):** Both this GitHub repository and the Hugging Face checkpoints repository (`northlattice/pd-defect-pole-lean-checkpoints`) are public and cross-linked in the manuscript.
 - Keep a single compute notebook per platform (`notebooks/pd_defect_experiments.py`) and never shut down a compute session without asking the user first.
 - **Experimental protocol (locked):**
   - Official `classification/{train,val,test}` split only; keypoints only for `cls-train` images (stem + size match), masked for `Rejected`.
@@ -29,3 +29,4 @@ This file tracks the active rules, decisions, and step-by-step progress after ha
 - [x] **Step 3 (2026-11-26):** Integrated ConvNeXt-Base (H4, H4b, xai2_convnext) across abstract, intro, method, main table, dedicated Results subsection, XAI, discussion, limitations, and conclusion in `paper/main.tex` (`d6ac1e1`) and added `liu2022convnext` to `paper/references.bib` (`a8d7213`). Note: `paper/make_figures.py` (`fig_forest`) does not yet include `b10`/`b11`.
 - [x] **Step 4:** Final cleanup (`\todo` removal, Data & Code Availability links, consistency audit) for supervisor review and arXiv submission.
 - [x] **Step 5 (2026-11-26):** Formatted manuscript into official *Computer Optics* DOCX template (`CO Template_en 2026-06-30.docx`) under `paper/computer_optics/`, shortened abstract to 214 words (no formulas/abbreviations), converted references to numbered AMA style with DOIs, prepared 8 separate 300-dpi JPEG figures (`01.jpg`–`08.jpg`, 1000–2000 px) in `figures_computer_optics.zip`, and generated PDF via LibreOffice.
+- [x] **Step 6 (2026-11-27):** Public-release cleanup — added MIT `LICENSE`, synced AI assistance disclosure (Claude + Gemini) and public HF/GitHub links in `README.md` and `hf_model_card/README.md`, and removed obsolete HF anonymity notes from `CLAUDE.md` and `GEMINI.md`.

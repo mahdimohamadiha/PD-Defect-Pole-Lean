@@ -1,4 +1,5 @@
 ---
+license: apache-2.0
 tags:
 - image-classification
 - keypoint-detection
@@ -10,6 +11,7 @@ datasets:
 base_model:
 - facebook/dinov2-base
 - facebook/dinov2-with-registers-base
+- facebook/convnext-base-224-22k
 pipeline_tag: image-classification
 ---
 
@@ -17,11 +19,12 @@ pipeline_tag: image-classification
 
 Fine-tuned checkpoints for **utility-pole lean assessment** (3 classes: `Leaned`, `Straight`, `Rejected`)
 on the `pole_lean_assessment` subset of [PD-Defect](https://huggingface.co/datasets/EPDCL/pd-defect).
-A ViT backbone is fully fine-tuned for classification, optionally with an auxiliary head that regresses
-the pole axis (bottom and top keypoints).
+ViT (`DINOv2`, `DINOv2 with registers`) and CNN (`ConvNeXt-Base`) backbones are fully fine-tuned for
+classification, optionally with an auxiliary head that regresses the pole axis (bottom and top keypoints).
 
 > **Status:** all experiments are complete, including the follow-up and explainability analyses summarised below.
-> A paper describing the study is in preparation; this card may still change before it is published.
+> Code, analysis scripts, per-run results, and manuscript files are publicly available at
+> [github.com/mahdimohamadiha/PD-Defect-Pole-Lean](https://github.com/mahdimohamadiha/PD-Defect-Pole-Lean).
 
 ## Checkpoints in this repository
 
@@ -180,5 +183,19 @@ The training data, PD-Defect, is CC BY 4.0. Please cite it:
                V.A.N, Sreenivasa Rao and V, Vijaya Lalitha and Chilamkurthy, Sasank},
   title     = {{PD-Defect: A Field-Captured Smartphone Image Dataset for AI-Based Inspection of Power Distribution Infrastructure}},
   year      = {2026}, publisher = {figshare}, doi = {10.6084/m9.figshare.34329402}
+}
+```
+
+## Code and citation
+
+- **Code, logs, and analysis scripts:** [github.com/mahdimohamadiha/PD-Defect-Pole-Lean](https://github.com/mahdimohamadiha/PD-Defect-Pole-Lean) (MIT License)
+- **Dataset:** [EPDCL/pd-defect](https://huggingface.co/datasets/EPDCL/pd-defect) (CC BY 4.0)
+
+```bibtex
+@misc{mohammadiha2026polelean,
+  author = {Mohammadiha, Mahdi and Bahaghighat, Mahdi},
+  title  = {A Controlled, Pre-specified Evaluation of Multi-task Learning for Utility-Pole Lean Assessment},
+  year   = {2026},
+  url    = {https://github.com/mahdimohamadiha/PD-Defect-Pole-Lean}
 }
 ```
